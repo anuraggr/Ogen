@@ -1,0 +1,3 @@
+/home/anuragrai/Desktop/ogen/build/CMakeFiles/ogen.dir
+/home/anuragrai/Desktop/ogen/build/CMakeFiles/edit_cache.dir
+/home/anuragrai/Desktop/ogen/build/CMakeFiles/rebuild_cache.dir
