@@ -6,7 +6,12 @@
 enum class TokenType { 
     exit,
     int_lit,
-    semi 
+    semi,
+    open_prem,
+    close_prem,
+    ident,
+    let,
+    eq
     };
 
 struct Token {
@@ -36,9 +41,18 @@ class Tokenizer {
                         buf.clear();
                         continue;
                     }
+
+                    else if (buf == "let") {
+                        tokens.push_back({ .type = TokenType::let });
+                        buf.clear();
+                        continue;
+                    }
+
                     else {
-                        std::cerr << "You messed up!" << std::endl;
-                        exit(EXIT_FAILURE);
+                        tokens.push_back({ .type = TokenType::ident, .value = buf });
+                        buf.clear();
+                        continue;
+                        
                     }
                 }
                 else if (std::isdigit(peak().value())) {
@@ -50,17 +64,37 @@ class Tokenizer {
                     buf.clear();
                     continue;
                 }
+
+                else if (peak().value() == '('){
+                    consume();
+                    tokens.push_back({ .type = TokenType::open_prem });
+                    continue;
+                }
+
+                else if (peak().value() == ')'){
+                    consume();
+                    tokens.push_back({ .type = TokenType::close_prem });
+                    continue;
+                }
+
                 else if (peak().value() == ';') {
                     consume();
                     tokens.push_back({ .type = TokenType::semi });
                     continue;
                 }
+
+                else if (peak().value() == '=') {
+                    consume();
+                    tokens.push_back({ .type = TokenType::eq});
+                    continue;
+                }
+
                 else if (std::isspace(peak().value())) {
                     consume();
                     continue;
                 }
                 else {
-                    std::cerr << "You messed up!" << std::endl;
+                    std::cerr << "Unknown token: " << peak().value() << std::endl;
                     exit(EXIT_FAILURE);
                 }
             }
@@ -69,13 +103,13 @@ class Tokenizer {
         }
 
     private:
-        [[nodiscard]] inline std::optional<char> peak(int ahead = 1) const
+        [[nodiscard]] inline std::optional<char> peak(int offset = 0) const
         {
-            if (m_index + ahead > m_src.length()) {
+            if (m_index + offset >= m_src.length()) {
                 return {};
             }
             else {
-                return m_src.at(m_index);
+                return m_src.at(m_index + offset);
             }
         }
 
