@@ -12,8 +12,25 @@ enum class TokenType {
     ident,
     let,
     eq,
-    plus
+    plus,
+    star,
+    sub,
+    div
     };
+
+
+std::optional<int> bin_prec(TokenType type) {
+    switch (type) {
+        case TokenType::plus:
+        case TokenType::sub:
+            return 0;
+        case TokenType::div:
+        case TokenType::star:
+            return 1;
+        default:
+            return {};
+    }
+}
     
    inline std::ostream& operator<<(std::ostream& os, const TokenType& type) {  //debug for printing tokens
      switch (type) {
@@ -46,88 +63,92 @@ class Tokenizer {
             std::cout << "Tokenizing...\n" << m_src <<std::endl; //debug
             std::vector<Token> tokens; //type, value. value is optional 
             std::string buf;
-            while (peak().has_value()) {
-                if (std::isalpha(peak().value())) {
+            while (peek().has_value()) {
+                if (std::isalpha(peek().value())) {
                     buf.push_back(consume());
-                    while (peak().has_value() && std::isalnum(peak().value())) {
+                    while (peek().has_value() && std::isalnum(peek().value())) {
                         buf.push_back(consume());
                     }
                     if (buf == "exit") {
                         std::cout << "Buffer is exit" << std::endl; //debug
                         tokens.push_back({ .type = TokenType::exit });
                         buf.clear();
-                        continue;
                     }
 
                     else if (buf == "let") {
                         std::cout << "Buffer is let" << std::endl; //debug
                         tokens.push_back({ .type = TokenType::let });
                         buf.clear();
-                        continue;
                     }
 
                     else {
                         std::cout << "Buffer is ident" << std::endl; //debug
                         tokens.push_back({ .type = TokenType::ident, .value = buf });
                         buf.clear();
-                        continue;
-                        
                     }
                 }
-                else if (std::isdigit(peak().value())) {
+                else if (std::isdigit(peek().value())) {
                     buf.push_back(consume());
-                    while (peak().has_value() && std::isdigit(peak().value())) {
+                    while (peek().has_value() && std::isdigit(peek().value())) {
                         buf.push_back(consume());
                     }
                     tokens.push_back({ .type = TokenType::int_lit, .value = buf });
                     std::cout << "Buffer is int_lit" << std::endl; //debug
                     buf.clear();
-                    continue;
                 }
 
-                else if (peak().value() == '('){
+                else if (peek().value() == '('){
                     consume();
                     tokens.push_back({ .type = TokenType::open_paren });
                     std::cout << "Buffer is (" << std::endl; //debug
-                    continue;
                 }
 
-                else if (peak().value() == ')'){
+                else if (peek().value() == ')'){
                     consume();
                     tokens.push_back({ .type = TokenType::close_paren });
                     std::cout << "Buffer is )" << std::endl; //debug
-                    continue;
                 }
 
-                else if (peak().value() == ';') {
+                else if (peek().value() == ';') {
                     consume();
                     tokens.push_back({ .type = TokenType::semi });
                     std::cout << "Buffer is ;" << std::endl; //debug
-                    continue;
                 }
 
-                else if (peak().value() == '=') {
+                else if (peek().value() == '=') {
                     consume();
                     tokens.push_back({ .type = TokenType::eq});
                     std::cout << "Buffer is =" << std::endl; //debug
-                    continue;
                 }
 
 
-                else if (peak().value() == '+') {
+                else if (peek().value() == '+') {
                     consume();
                     tokens.push_back({ .type = TokenType::plus });
-                    continue;
+                }
+
+                else if(peek().value() == '*') {
+                    consume();
+                    tokens.push_back({ .type = TokenType::star });
+                }
+
+                else if(peek().value() == '-') {
+                    consume();
+                    tokens.push_back({ .type = TokenType::sub });
+                }
+
+                else if(peek().value() == '/') {
+                    consume();
+                    tokens.push_back({ .type = TokenType::div });
                 }
 
 
-                else if (std::isspace(peak().value())) {
+                else if (std::isspace(peek().value())) {
                     consume();
                     std::cout << "empty space" << std::endl; //debug
-                    continue;
                 }
                 else {
-                    std::cerr << "Unknown token: " << peak().value() << std::endl;
+                    std::cerr << "Unknown token: " << peek().value() << std::endl;
                     exit(EXIT_FAILURE);
                 }
             }
@@ -141,7 +162,7 @@ class Tokenizer {
         }
 
     private:
-        [[nodiscard]] inline std::optional<char> peak(int offset = 0) const
+        [[nodiscard]] inline std::optional<char> peek(int offset = 0) const
         {
             if (m_index + offset >= m_src.length()) {
                 return {};
