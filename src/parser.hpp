@@ -61,8 +61,14 @@ struct NodeStmtLet {
     NodeExpr* expr;
 };
 
+struct NodeStmt;
+
+struct NodeStmtScope {
+    std::vector<NodeStmt*> stmts;
+};
+
 struct NodeStmt {
-    std::variant<NodeStmtExit*, NodeStmtLet*> var;
+    std::variant<NodeStmtExit*, NodeStmtLet*, NodeStmtScope*> var;
 };
 
 struct NodeProg {
@@ -111,7 +117,7 @@ public:
         }
     }
 
-    std::optional<NodeExpr*> parse_expr(int min_prec = 0)
+    std::optional<NodeExpr*> parse_expr(int min_prec = 0)     //precedence climbing algo used. i dont have it fully understood ngl
     {
 
         std::optional<NodeTerm*> term_lhs = parse_term();
@@ -211,8 +217,8 @@ public:
             && peek(2).value().type == TokenType::eq) {
             consume();
             auto stmt_let = m_allocator.alloc<NodeStmtLet>();
-            stmt_let->ident = consume();
-            consume();
+            stmt_let->ident = consume();  //consumes indet
+            consume();                                          //consumes =
             if (auto expr = parse_expr()) {
                 stmt_let->expr = expr.value();
             }

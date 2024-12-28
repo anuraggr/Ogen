@@ -2,7 +2,7 @@
 
 #include "parser.hpp"
 #include <cassert>
-#include <unordered_map>
+#include <map>
 
 class Generator {
 public:
@@ -124,6 +124,10 @@ public:
                 gen->m_vars.insert({ stmt_let->ident.value.value(), Var { .stack_loc = gen->m_stack_size } });
                 gen->gen_expr(stmt_let->expr);
             }
+            void operator()(const NodeStmtScope* scope) const
+            {
+                assert(false);
+            } 
         };
 
         StmtVisitor visitor { .gen = this };
@@ -164,5 +168,5 @@ private:
     const NodeProg m_prog;
     std::stringstream m_output;
     size_t m_stack_size = 0;
-    std::unordered_map<std::string, Var> m_vars {};
+    std::map<std::string, Var> m_vars {};
 };
