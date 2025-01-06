@@ -6,6 +6,12 @@
 
 #include "./generation.hpp"
 
+#ifdef _WIN32
+    #define OS_WINDOWS
+#elif __linux__
+    #define OS_LINUX
+#endif
+
 int main(int argc, char* argv[])
 {
     if (argc != 2) {
@@ -39,8 +45,15 @@ int main(int argc, char* argv[])
         file << generator.gen_prog();
     }
 
-    system("nasm -felf64 out.asm");
-    system("ld -o out out.o");
+    #ifdef OS_WINDOWS                       //Untestd. might not work on windows.
+        system("nasm -fwin64 out.asm");
+        system("link.exe out.obj /out:out.exe");
+    #elif defined(OS_LINUX)
+        system("nasm -felf64 out.asm");
+        system("ld -o out out.o");
+    #else
+        std::cout << "Unsupported OS" << std::endl;
+    #endif
 
     return EXIT_SUCCESS;
 }
