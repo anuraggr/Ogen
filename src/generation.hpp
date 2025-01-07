@@ -127,6 +127,23 @@ public:
             {
                 assert(false);
             } 
+            void operator()(const NodeStmtIf* if_condition) const
+            {
+                std::cout << "If statement" << std::endl; //debug
+                gen->gen_expr(if_condition->lhs);
+                gen->gen_expr(if_condition->rhs);
+                gen->pop("rbx");
+                gen->pop("rax");
+                gen->m_output << "    cmp rax, rbx\n";
+
+                std::string end_label = gen->generate_label("end_if");
+                gen->m_output << "    jne " << end_label << "\n";
+
+                for(const NodeStmt* stmt : if_condition->body){
+                    gen->gen_stmt(stmt);
+                }
+                gen->m_output << "    " <<  end_label << ":\n";
+            } 
         };
 
         StmtVisitor visitor { .gen = this };
@@ -163,6 +180,11 @@ private:
     struct Var {
         size_t stack_loc;
     };
+
+    std::string generate_label(const std::string& base) {
+        static int label_counter = 0;
+        return base + "_" + std::to_string(label_counter++);
+    }
 
     const NodeProg m_prog;
     std::stringstream m_output;

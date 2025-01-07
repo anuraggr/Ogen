@@ -61,14 +61,22 @@ struct NodeStmtLet {
     NodeExpr* expr;
 };
 
+
+
 struct NodeStmt;
+
+struct NodeStmtIf {
+    NodeExpr* lhs;
+    NodeExpr* rhs;
+    std::vector<NodeStmt*> body;
+};
 
 struct NodeStmtScope {
     std::vector<NodeStmt*> stmts;
 };
 
 struct NodeStmt {
-    std::variant<NodeStmtExit*, NodeStmtLet*, NodeStmtScope*> var;
+    std::variant<NodeStmtExit*, NodeStmtLet*, NodeStmtScope*, NodeStmtIf*> var;
 };
 
 struct NodeProg {
@@ -193,7 +201,6 @@ public:
 
     std::optional<NodeStmt*> parse_stmt()
     {
-        std::cout << "Stmt Parse" << std::endl;
         if (peek().value().type == TokenType::exit && peek(1).has_value()
             && peek(1).value().type == TokenType::open_paren) {
             consume();
@@ -234,6 +241,46 @@ public:
             stmt->var = stmt_let;
             return stmt;
         }
+        else if (peek().has_value() && peek().value().type == TokenType::if_condition 
+                && peek(1).has_value() && (peek(1).value().type == TokenType::ident || peek(1).value().type == TokenType::int_lit) && peek(2).has_value() && peek(2).value().type == TokenType::eq && peek(3).has_value() && (peek(3).value().type == TokenType::ident || peek(3).value().type == TokenType::int_lit)){
+                    consume(); //consumes if
+                    std::cout << "If" << std::endl;
+                    auto stmt_if = m_allocator.alloc<NodeStmtIf>();
+                    if (auto lhs = parse_expr()){
+                        stmt_if->lhs = lhs.value();
+                    }
+                    else{
+                        std::cerr << "Invalid expression" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    consume(); //consumes ==
+                    if (auto rhs = parse_expr()){
+                        stmt_if->rhs = rhs.value();
+                    }
+                    else{
+                        std::cerr << "Invalid expression" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    while(peek().has_value() && peek().value().type != TokenType::end_if){
+                        if(auto stmt = parse_stmt()){
+                            stmt_if->body.push_back(stmt.value());
+                        }
+                        else{
+                            std::cerr << "Invalid statement" << std::endl;
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                    if(peek().has_value() && peek().value().type == TokenType::end_if){
+                        consume(); //consumes end_if
+                    }
+                    else{
+                        std::cerr << "Expected end_if" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    auto stmt = m_allocator.alloc<NodeStmt>();
+                    stmt->var = stmt_if;
+                    return stmt;
+                }
         else {
             return {};
         }

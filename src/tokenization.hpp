@@ -20,7 +20,10 @@ enum class TokenType {
     uni_plus,
     uni_sub,
     open_curly,
-    close_curly
+    close_curly,
+    if_condition,
+    end_if,
+    eq
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
@@ -28,7 +31,9 @@ TokenType getStringToTokenType(const std::string& inString){
         static const std::unordered_map<std::string, TokenType> tokenMap = {
             {"exit", TokenType::exit},
             {"let", TokenType::let},
-            {"be", TokenType::be}
+            {"be", TokenType::be},
+            {"if", TokenType::if_condition},
+            {"end_if", TokenType::end_if}
         };
 
         auto it = tokenMap.find(inString);
@@ -48,7 +53,7 @@ std::optional<int> bin_prec(TokenType type) {
         case TokenType::star:
             return 1;
         case TokenType::uni_plus:
-        case TokenType::uni_sub:
+        case TokenType::uni_sub:    //unused as of yet. unary operators
             return 2;
         default:
             return {};
@@ -72,6 +77,8 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::div: os << "div"; break;
             case TokenType::open_curly: os << "open_curly"; break;
             case TokenType::close_curly: os << "close_curly"; break;
+            case TokenType::if_condition: os << "if"; break;
+            case TokenType::end_if: os << "end_if"; break;
          }
          return os;
      }
@@ -101,7 +108,7 @@ class Tokenizer {
                 if (std::isalpha(currentChar)) {  //keywords or ident(x, y, etc)
                     
                     buf.push_back(consume());
-                    while (peek().has_value() && std::isalnum(peek().value())) {
+                    while (peek().has_value() && (std::isalnum(peek().value()) || peek().value() == '_')) {
                         buf.push_back(consume());
                     }
                     switch(getStringToTokenType(buf)){
@@ -118,6 +125,16 @@ class Tokenizer {
                         case TokenType::be:
                             std::cout << "Buffer is be" << std::endl; //debug
                             tokens.push_back({ .type = TokenType::be });
+                            buf.clear();
+                            break;
+                        case TokenType::if_condition:
+                            std::cout << "Buffer is if" << std::endl; //debug
+                            tokens.push_back({ .type = TokenType::if_condition });
+                            buf.clear();
+                            break;
+                        case TokenType::end_if:
+                            std::cout << "Buffer is end_if" << std::endl; //debug
+                            tokens.push_back({ .type = TokenType::end_if });
                             buf.clear();
                             break;
                         case TokenType::ident:
@@ -155,6 +172,15 @@ class Tokenizer {
                             consume();
                             tokens.push_back({ .type = TokenType::semi});
                             std::cout << "Buffer is ;" << std::endl;
+                            break;
+                        case '=':                                       //comparison eq. assignment is 'be'
+                            if(peek(1).has_value() && peek(1).value() == '='){
+                                consume();
+                                consume();
+                                tokens.push_back({ .type = TokenType::eq});
+                                std::cout << "Buffer is ==" << std::endl;
+                                break;
+                            }
                             break;
                         case '+':
                             if(peek(1).has_value() && peek(1).value() == '+' && peek(2).has_value() 

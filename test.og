@@ -1,3 +1,7 @@
-let x be (10-2*3)/2;
-let yebra be x+6;
-exit(yebra);
+let x be 3;
+
+if x == 3
+    let y be x+1;
+end_if
+
+exit(y);
