@@ -193,10 +193,12 @@ public:
 
     std::optional<NodeStmt*> parse_stmt()
     {
+        std::cout << "Stmt Parse" << std::endl;
         if (peek().value().type == TokenType::exit && peek(1).has_value()
             && peek(1).value().type == TokenType::open_paren) {
             consume();
             consume();
+            std::cout << "Exit" << std::endl;
             auto stmt_exit = m_allocator.alloc<NodeStmtExit>();
             if (auto node_expr = parse_expr()) {
                 stmt_exit->expr = node_expr.value();
@@ -214,8 +216,9 @@ public:
         else if (
             peek().has_value() && peek().value().type == TokenType::let && peek(1).has_value()
             && peek(1).value().type == TokenType::ident && peek(2).has_value()
-            && peek(2).value().type == TokenType::eq) {
+            && peek(2).value().type == TokenType::be) {
             consume();
+            std::cout << "Let" << std::endl;
             auto stmt_let = m_allocator.alloc<NodeStmtLet>();
             stmt_let->ident = consume();  //consumes indet
             consume();                                          //consumes =

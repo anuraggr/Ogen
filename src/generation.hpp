@@ -2,7 +2,6 @@
 
 #include "parser.hpp"
 #include <cassert>
-#include <map>
 
 class Generator {
 public:
@@ -168,5 +167,5 @@ private:
     const NodeProg m_prog;
     std::stringstream m_output;
     size_t m_stack_size = 0;
-    std::map<std::string, Var> m_vars {};
+    std::unordered_map<std::string, Var> m_vars;
 };

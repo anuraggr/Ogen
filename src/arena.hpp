@@ -6,7 +6,7 @@ public:
         : m_size(bytes)
     {
         m_buffer = static_cast<std::byte*>(malloc(m_size));
-        m_offset = m_buffer;
+        m_offset = m_buffer;    //points to start of buffer
     }
 
     template <typename T>

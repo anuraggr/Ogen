@@ -12,19 +12,23 @@ enum class TokenType {
     close_paren,
     ident,
     let,
-    eq,
+    be,
     plus,
     star,
     sub,
     div,
+    uni_plus,
+    uni_sub,
     open_curly,
     close_curly
     };
 
-TokenType string_hash(const std::string& inString){
+// Converts a string to its corresponding TokenType for Switch case below.
+TokenType getStringToTokenType(const std::string& inString){
         static const std::unordered_map<std::string, TokenType> tokenMap = {
             {"exit", TokenType::exit},
-            {"let", TokenType::let}
+            {"let", TokenType::let},
+            {"be", TokenType::be}
         };
 
         auto it = tokenMap.find(inString);
@@ -34,6 +38,7 @@ TokenType string_hash(const std::string& inString){
         return TokenType::ident;
 }
 
+// Returns the precedence of a binary operator.
 std::optional<int> bin_prec(TokenType type) {
     switch (type) {
         case TokenType::plus:
@@ -42,11 +47,15 @@ std::optional<int> bin_prec(TokenType type) {
         case TokenType::div:
         case TokenType::star:
             return 1;
+        case TokenType::uni_plus:
+        case TokenType::uni_sub:
+            return 2;
         default:
             return {};
     }
 }
-    
+
+// This is here for debugging.
    inline std::ostream& operator<<(std::ostream& os, const TokenType& type) {  //debug for printing tokens
      switch (type) {
             case TokenType::exit: os << "exit"; break;
@@ -56,7 +65,7 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::close_paren: os << "close_prem"; break;
             case TokenType::ident: os << "ident"; break;
             case TokenType::let: os << "let"; break;
-            case TokenType::eq: os << "eq"; break;
+            case TokenType::be: os << "eq"; break;
             case TokenType::plus: os << "plus"; break;
             case TokenType::star: os << "star"; break;
             case TokenType::sub: os << "sub"; break;
@@ -75,7 +84,7 @@ struct Token {
 class Tokenizer {
     public:
         inline explicit Tokenizer(std::string src)
-            : m_src(std::move(src))
+            : m_src(std::move(src))                 //member initializer list
         {
         }
 
@@ -95,7 +104,7 @@ class Tokenizer {
                     while (peek().has_value() && std::isalnum(peek().value())) {
                         buf.push_back(consume());
                     }
-                    switch(string_hash(buf)){
+                    switch(getStringToTokenType(buf)){
                         case TokenType::exit:
                             std::cout << "Buffer is exit" << std::endl; //debug
                             tokens.push_back({ .type = TokenType::exit });
@@ -104,6 +113,11 @@ class Tokenizer {
                         case TokenType::let:
                             std::cout << "Buffer is let" << std::endl; //debug
                             tokens.push_back({ .type = TokenType::let });
+                            buf.clear();
+                            break;
+                        case TokenType::be:
+                            std::cout << "Buffer is be" << std::endl; //debug
+                            tokens.push_back({ .type = TokenType::be });
                             buf.clear();
                             break;
                         case TokenType::ident:
@@ -142,12 +156,15 @@ class Tokenizer {
                             tokens.push_back({ .type = TokenType::semi});
                             std::cout << "Buffer is ;" << std::endl;
                             break;
-                        case '=':
-                            consume();
-                            tokens.push_back({ .type = TokenType::eq});
-                            std::cout << "Buffer is =" << std::endl;
-                            break;
                         case '+':
+                            if(peek(1).has_value() && peek(1).value() == '+' && peek(2).has_value() 
+                                && peek(2).value() == '+'){
+                                consume();
+                                consume();
+                                tokens.push_back({ .type = TokenType::uni_plus});
+                                std::cout << "Buffer is ++" << std::endl;
+                                break;
+                            }
                             consume();
                             tokens.push_back({ .type = TokenType::plus});
                             std::cout << "Buffer is +" << std::endl;
@@ -158,6 +175,14 @@ class Tokenizer {
                             std::cout << "Buffer is *" << std::endl;
                             break;
                         case '-':
+                            if(peek(1).has_value() && peek(1).value() == '-' &&
+                                peek(2).has_value() && peek(2).value() == '-'){
+                                consume();
+                                consume();
+                                tokens.push_back({ .type = TokenType::uni_sub});
+                                std::cout << "Buffer is --" << std::endl;
+                                break;
+                            }
                             consume();
                             tokens.push_back({ .type = TokenType::sub});
                             std::cout << "Buffer is -" << std::endl;
@@ -206,14 +231,12 @@ class Tokenizer {
                 return {};
             }
             else {
-                std::cout << "Peaking: " << m_src.at(m_index + offset) << std::endl; //debug
                 return m_src.at(m_index + offset);
             }
         }
 
         inline char consume()
         {
-            std::cout << "Consuming: " << m_src.at(m_index) << std::endl; //debug
             return m_src.at(m_index++);
         }
 
