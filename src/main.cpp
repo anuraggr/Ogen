@@ -6,9 +6,7 @@
 
 #include "./generation.hpp"
 
-#ifdef _WIN32
-    #define OS_WINDOWS
-#elif __linux__
+#ifdef __linux__
     #define OS_LINUX
 #endif
 
@@ -45,10 +43,7 @@ int main(int argc, char* argv[])
         file << generator.gen_prog();
     }
 
-    #ifdef OS_WINDOWS                       //Untestd. might not work on windows.
-        system("nasm -fwin64 out.asm");
-        system("link.exe out.obj /out:out.exe");
-    #elif defined(OS_LINUX)
+    #ifdef OS_LINUX                       //Untestd. might not work on windows.
         system("nasm -felf64 out.asm");
         system("ld -o out out.o");
     #else
