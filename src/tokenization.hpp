@@ -26,6 +26,8 @@ enum class TokenType {
     eq,
     greater_than,
     less_than,
+    greater_eq,
+    less_eq,
     then
     };
 
@@ -85,6 +87,8 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::end_if: os << "end_if"; break;
             case TokenType::greater_than: os << "greater_than"; break;
             case TokenType::less_than: os << "less_than"; break;
+            case TokenType::greater_eq: os << "greater_eq"; break;
+            case TokenType::less_eq: os << "less_eq"; break;
             case TokenType::then: os << "then"; break;
          }
          return os;
@@ -196,11 +200,25 @@ class Tokenizer {
                             break;
                             tokens.push_back({ .type = TokenType::be});
                         case '>':
+                            if(peek(1).has_value() && peek(1).value()=='='){
+                                consume();
+                                consume();
+                                tokens.push_back({ .type = TokenType::greater_eq});
+                                std::cout << "Buffer is >=" << std::endl;
+                                break;
+                            }
                             consume();
                             tokens.push_back({ .type = TokenType::greater_than});
                             std::cout << "Buffer is >" << std::endl;
                             break;
                         case '<':
+                            if(peek(1).has_value() && peek(1).value()=='='){
+                                consume();
+                                consume();
+                                tokens.push_back({ .type = TokenType::less_eq});
+                                std::cout << "Buffer is <=" << std::endl;
+                                break;
+                            }
                             consume();
                             tokens.push_back({ .type = TokenType::less_than});
                             std::cout << "Buffer is <" << std::endl;

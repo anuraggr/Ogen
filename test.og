@@ -1,6 +1,6 @@
 let x be 3;
 
-if x == 3 then                #test comment
+if x >= 4 then                #test commmnt
     let y be x+1;
 end_if
 

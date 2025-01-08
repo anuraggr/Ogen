@@ -133,6 +133,7 @@ public:
 
         std::optional<NodeTerm*> term_lhs = parse_term();
         if(!term_lhs.has_value()){
+            std::cout << "Term LHS has no value" << std::endl; //debug
             return {};
         }
 
@@ -246,10 +247,13 @@ public:
         }
         else if (peek().has_value() && peek().value().type == TokenType::if_condition 
                 && peek(1).has_value() && (peek(1).value().type == TokenType::ident 
-                || peek(1).value().type == TokenType::int_lit) && peek(2).has_value() 
-                && (peek(2).value().type == TokenType::eq || peek(2).value().type==TokenType::greater_than 
-                || peek(2).value().type==TokenType::less_than) && peek(3).has_value() 
-                && (peek(3).value().type == TokenType::ident || peek(3).value().type == TokenType::int_lit) && peek(4).has_value() && peek(4).value().type == TokenType::then){
+                || peek(1).value().type == TokenType::int_lit || peek(1).value().type == TokenType::open_paren) 
+                && peek(2).has_value() && (peek(2).value().type == TokenType::eq 
+                || peek(2).value().type == TokenType::greater_than 
+                || peek(2).value().type == TokenType::less_than || peek(2).value().type == TokenType::greater_eq 
+                || peek(2).value().type == TokenType::less_eq)
+                && peek(3).has_value() && (peek(3).value().type == TokenType::ident 
+                || peek(3).value().type == TokenType::int_lit || peek(3).value().type == TokenType::open_paren)) {
                     consume(); //consumes if
                     std::cout << "If" << std::endl;
                     auto stmt_if = m_allocator.alloc<NodeStmtIf>();
@@ -269,13 +273,13 @@ public:
                         std::cerr << "Invalid expression" << std::endl;
                         exit(EXIT_FAILURE);
                     }
-                try_consume(TokenType::then, "Expected `then`");
+                    try_consume(TokenType::then, "Expected `then`");
                     while(peek().has_value() && peek().value().type != TokenType::end_if){
                         if(auto stmt = parse_stmt()){
                             stmt_if->body.push_back(stmt.value());
                         }
                         else{
-                            std::cerr << "Invalid statement" << std::endl;
+                            std::cerr << "Exited with error: Invalid statement" << std::endl;
                             exit(EXIT_FAILURE);
                         }
                     }
@@ -303,7 +307,7 @@ public:
                 prog.stmts.push_back(stmt.value());
             }
             else {
-                std::cerr << "Invalid statement" << std::endl;
+                std::cerr << "Exited with error: Invalid statement" << std::endl;
                 exit(EXIT_FAILURE);
             }
         }
