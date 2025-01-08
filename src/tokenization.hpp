@@ -197,8 +197,9 @@ class Tokenizer {
                                 std::cout << "Buffer is ==" << std::endl;
                                 break;
                             }
-                            break;
+                            consume();
                             tokens.push_back({ .type = TokenType::be});
+                            break;
                         case '>':
                             if(peek(1).has_value() && peek(1).value()=='='){
                                 consume();
