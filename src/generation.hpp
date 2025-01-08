@@ -137,8 +137,19 @@ public:
                 gen->m_output << "    cmp rax, rbx\n";
 
                 std::string end_label = gen->generate_label("end_if");
-                gen->m_output << "    jne " << end_label << "\n";
-
+                if(if_condition->comparison->comp.type == TokenType::eq){
+                    gen->m_output << "    jne " << end_label << "\n";
+                }
+                else if(if_condition->comparison->comp.type == TokenType::greater_than){
+                    gen->m_output << "    jle " << end_label << "\n";
+                }
+                else if(if_condition->comparison->comp.type == TokenType::less_than){
+                    gen->m_output << "    jge " << end_label << "\n";
+                }
+                else{
+                    std::cerr << "Invalid comparison" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
                 for(const NodeStmt* stmt : if_condition->body){
                     gen->gen_stmt(stmt);
                 }

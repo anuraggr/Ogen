@@ -23,7 +23,9 @@ enum class TokenType {
     close_curly,
     if_condition,
     end_if,
-    eq
+    eq,
+    greater_than,
+    less_than
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
@@ -79,6 +81,8 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::close_curly: os << "close_curly"; break;
             case TokenType::if_condition: os << "if"; break;
             case TokenType::end_if: os << "end_if"; break;
+            case TokenType::greater_than: os << "greater_than"; break;
+            case TokenType::less_than: os << "less_than"; break;
          }
          return os;
      }
@@ -181,6 +185,17 @@ class Tokenizer {
                                 std::cout << "Buffer is ==" << std::endl;
                                 break;
                             }
+                            break;
+                            tokens.push_back({ .type = TokenType::be});
+                        case '>':
+                            consume();
+                            tokens.push_back({ .type = TokenType::greater_than});
+                            std::cout << "Buffer is >" << std::endl;
+                            break;
+                        case '<':
+                            consume();
+                            tokens.push_back({ .type = TokenType::less_than});
+                            std::cout << "Buffer is <" << std::endl;
                             break;
                         case '+':
                             if(peek(1).has_value() && peek(1).value() == '+' && peek(2).has_value() 

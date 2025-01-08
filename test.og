@@ -1,6 +1,6 @@
 let x be 3;
 
-if x == 3
+if x < 3
     let y be x+1;
 end_if
 

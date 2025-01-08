@@ -61,13 +61,16 @@ struct NodeStmtLet {
     NodeExpr* expr;
 };
 
-
+struct NodeComparison {
+    Token comp;
+};
 
 struct NodeStmt;
 
 struct NodeStmtIf {
     NodeExpr* lhs;
     NodeExpr* rhs;
+    NodeComparison* comparison;
     std::vector<NodeStmt*> body;
 };
 
@@ -242,7 +245,11 @@ public:
             return stmt;
         }
         else if (peek().has_value() && peek().value().type == TokenType::if_condition 
-                && peek(1).has_value() && (peek(1).value().type == TokenType::ident || peek(1).value().type == TokenType::int_lit) && peek(2).has_value() && peek(2).value().type == TokenType::eq && peek(3).has_value() && (peek(3).value().type == TokenType::ident || peek(3).value().type == TokenType::int_lit)){
+                && peek(1).has_value() && (peek(1).value().type == TokenType::ident 
+                || peek(1).value().type == TokenType::int_lit) && peek(2).has_value() 
+                && (peek(2).value().type == TokenType::eq || peek(2).value().type==TokenType::greater_than 
+                || peek(2).value().type==TokenType::less_than) && peek(3).has_value() 
+                && (peek(3).value().type == TokenType::ident || peek(3).value().type == TokenType::int_lit)){
                     consume(); //consumes if
                     std::cout << "If" << std::endl;
                     auto stmt_if = m_allocator.alloc<NodeStmtIf>();
@@ -253,7 +260,8 @@ public:
                         std::cerr << "Invalid expression" << std::endl;
                         exit(EXIT_FAILURE);
                     }
-                    consume(); //consumes ==
+                    stmt_if->comparison = m_allocator.alloc<NodeComparison>();
+                    stmt_if->comparison->comp = consume();                      //consumes comparison
                     if (auto rhs = parse_expr()){
                         stmt_if->rhs = rhs.value();
                     }
