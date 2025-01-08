@@ -9,7 +9,7 @@ _start:
     pop rbx
     pop rax
     cmp rax, rbx
-    jge end_if_0
+    jne end_if_0
     mov rax, 1
     push rax
     push QWORD [rsp + 8]

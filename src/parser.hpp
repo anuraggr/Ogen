@@ -249,7 +249,7 @@ public:
                 || peek(1).value().type == TokenType::int_lit) && peek(2).has_value() 
                 && (peek(2).value().type == TokenType::eq || peek(2).value().type==TokenType::greater_than 
                 || peek(2).value().type==TokenType::less_than) && peek(3).has_value() 
-                && (peek(3).value().type == TokenType::ident || peek(3).value().type == TokenType::int_lit)){
+                && (peek(3).value().type == TokenType::ident || peek(3).value().type == TokenType::int_lit) && peek(4).has_value() && peek(4).value().type == TokenType::then){
                     consume(); //consumes if
                     std::cout << "If" << std::endl;
                     auto stmt_if = m_allocator.alloc<NodeStmtIf>();
@@ -269,6 +269,7 @@ public:
                         std::cerr << "Invalid expression" << std::endl;
                         exit(EXIT_FAILURE);
                     }
+                try_consume(TokenType::then, "Expected `then`");
                     while(peek().has_value() && peek().value().type != TokenType::end_if){
                         if(auto stmt = parse_stmt()){
                             stmt_if->body.push_back(stmt.value());

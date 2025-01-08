@@ -25,7 +25,8 @@ enum class TokenType {
     end_if,
     eq,
     greater_than,
-    less_than
+    less_than,
+    then
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
@@ -35,7 +36,8 @@ TokenType getStringToTokenType(const std::string& inString){
             {"let", TokenType::let},
             {"be", TokenType::be},
             {"if", TokenType::if_condition},
-            {"end_if", TokenType::end_if}
+            {"end_if", TokenType::end_if},
+            {"then", TokenType::then}
         };
 
         auto it = tokenMap.find(inString);
@@ -83,6 +85,7 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::end_if: os << "end_if"; break;
             case TokenType::greater_than: os << "greater_than"; break;
             case TokenType::less_than: os << "less_than"; break;
+            case TokenType::then: os << "then"; break;
          }
          return os;
      }
@@ -139,6 +142,11 @@ class Tokenizer {
                         case TokenType::end_if:
                             std::cout << "Buffer is end_if" << std::endl; //debug
                             tokens.push_back({ .type = TokenType::end_if });
+                            buf.clear();
+                            break;
+                        case TokenType::then:
+                            std::cout << "Buffer is then" << std::endl; //debug
+                            tokens.push_back({ .type = TokenType::then });
                             buf.clear();
                             break;
                         case TokenType::ident:
@@ -248,6 +256,11 @@ class Tokenizer {
                         case '\t':
                             consume();
                             std::cout << "Space" << std::endl;
+                            break;
+                        case '#':
+                            while(peek().has_value() && peek().value()!='\n'){
+                                consume();
+                            }
                             break;
                         default:
                             std::cerr << "Unknown token: " << currentChar << std::endl;
