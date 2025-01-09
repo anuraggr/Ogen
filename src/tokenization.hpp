@@ -28,7 +28,6 @@ enum class TokenType {
     less_than,
     greater_eq,
     less_eq,
-    then
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
@@ -38,8 +37,7 @@ TokenType getStringToTokenType(const std::string& inString){
             {"let", TokenType::let},
             {"be", TokenType::be},
             {"if", TokenType::if_condition},
-            {"end_if", TokenType::end_if},
-            {"then", TokenType::then}
+            {"end_if", TokenType::end_if}
         };
 
         auto it = tokenMap.find(inString);
@@ -89,7 +87,6 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::less_than: os << "less_than"; break;
             case TokenType::greater_eq: os << "greater_eq"; break;
             case TokenType::less_eq: os << "less_eq"; break;
-            case TokenType::then: os << "then"; break;
          }
          return os;
      }
@@ -146,11 +143,6 @@ class Tokenizer {
                         case TokenType::end_if:
                             std::cout << "Buffer is end_if" << std::endl; //debug
                             tokens.push_back({ .type = TokenType::end_if });
-                            buf.clear();
-                            break;
-                        case TokenType::then:
-                            std::cout << "Buffer is then" << std::endl; //debug
-                            tokens.push_back({ .type = TokenType::then });
                             buf.clear();
                             break;
                         case TokenType::ident:

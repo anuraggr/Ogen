@@ -273,7 +273,6 @@ public:
                         std::cerr << "Invalid expression" << std::endl;
                         exit(EXIT_FAILURE);
                     }
-                    try_consume(TokenType::then, "Expected `then`");
                     while(peek().has_value() && peek().value().type != TokenType::end_if){
                         if(auto stmt = parse_stmt()){
                             stmt_if->body.push_back(stmt.value());

@@ -1,11 +1,7 @@
 let x be 3;
 
-{
-    let y = 2;
-    {
-        let y = 6;
-    }
-}
-let y = 1;
+if x==3
+    let y be 4;
+end_if
 
 exit(y);
