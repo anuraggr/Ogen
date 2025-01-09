@@ -140,41 +140,56 @@ public:
             void operator()(const NodeStmtIf* if_condition) const
             {
                 std::cout << "If statement" << std::endl; //debug
-                gen->gen_expr(if_condition->lhs);
-                gen->gen_expr(if_condition->rhs);
-                gen->pop("rbx");
-                gen->pop("rax");
-                gen->m_output << "    cmp rax, rbx\n";
-
-                std::string end_label = gen->generate_label("end_if");
-                if(if_condition->comparison->comp.type == TokenType::eq_eq){
-                    gen->m_output << "    jne " << end_label << "\n";
-                }
-                else if(if_condition->comparison->comp.type == TokenType::greater_than){
-                    gen->m_output << "    jle " << end_label << "\n";
-                }
-                else if(if_condition->comparison->comp.type == TokenType::less_than){
-                    gen->m_output << "    jge " << end_label << "\n";
-                }
-                else if(if_condition->comparison->comp.type == TokenType::greater_eq){
+                if(!if_condition->rhs){
+                    gen->gen_expr(if_condition->lhs);
+                    gen->pop("rax");
+                    gen->m_output << "    cmp rax, 1\n";
+                    std::string end_label = gen->generate_label("end_if");
                     gen->m_output << "    jl " << end_label << "\n";
-                }
-                else if(if_condition->comparison->comp.type == TokenType::less_eq){
-                    gen->m_output << "    jg " << end_label << "\n";
+                    gen->begin_scope();
+                    for(const NodeStmt* stmt : if_condition->body){
+                        gen->gen_stmt(stmt);
+                    }
+                    gen->end_scope();
+
+                    gen->m_output << "    " <<  end_label << ":\n";
                 }
                 else{
-                    std::cerr << "Invalid comparison" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
+                    gen->gen_expr(if_condition->lhs);
+                    gen->gen_expr(if_condition->rhs);
+                    gen->pop("rbx");
+                    gen->pop("rax");
+                    gen->m_output << "    cmp rax, rbx\n";
 
-                gen->begin_scope();
-                for(const NodeStmt* stmt : if_condition->body){
-                    gen->gen_stmt(stmt);
-                }
-                gen->end_scope();
+                    std::string end_label = gen->generate_label("end_if");
+                    if(if_condition->comparison->comp.type == TokenType::eq_eq){
+                        gen->m_output << "    jne " << end_label << "\n";
+                    }
+                    else if(if_condition->comparison->comp.type == TokenType::greater_than){
+                        gen->m_output << "    jle " << end_label << "\n";
+                    }
+                    else if(if_condition->comparison->comp.type == TokenType::less_than){
+                        gen->m_output << "    jge " << end_label << "\n";
+                    }
+                    else if(if_condition->comparison->comp.type == TokenType::greater_eq){
+                        gen->m_output << "    jl " << end_label << "\n";
+                    }
+                    else if(if_condition->comparison->comp.type == TokenType::less_eq){
+                        gen->m_output << "    jg " << end_label << "\n";
+                    }
+                    else{
+                        std::cerr << "Invalid comparison" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
 
-                gen->m_output << "    " <<  end_label << ":\n";
-            } 
+                    gen->begin_scope();
+                    for(const NodeStmt* stmt : if_condition->body){
+                        gen->gen_stmt(stmt);
+                    }
+                    gen->end_scope();
+
+                    gen->m_output << "    " <<  end_label << ":\n";
+            }   }
         };
 
         StmtVisitor visitor { .gen = this };

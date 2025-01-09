@@ -2,32 +2,17 @@ global _start
 _start:
     mov rax, 3
     push rax
-    mov rax, 1
-    push rax
-    mov rax, 1
+    mov rax, 3
     push rax
     mov rax, 2
     push rax
     pop rax
     pop rbx
-    add rax, rbx
+    sub rax, rbx
     push rax
     pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    mov rax, 1
-    push rax
-    push QWORD [rsp + 16]
-
-    pop rax
-    pop rbx
-    add rax, rbx
-    push rax
-    pop rbx
-    pop rax
-    cmp rax, rbx
-    jne end_if_0
+    cmp rax, 1
+    jl end_if_0
     mov rax, 10
     push rax
     mov rax, 9

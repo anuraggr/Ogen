@@ -272,26 +272,41 @@ public:
                 std::cerr << "Invalid expression" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            stmt_if->comparison = m_allocator.alloc<NodeComparison>();
-            stmt_if->comparison->comp = consume();                      //consumes comparison
-            if(auto rhs = parse_expr()){
-                stmt_if->rhs = rhs.value();
-            }
-            else {
-                std::cerr << "Invalid expression" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-            try_consume(TokenType::close_paren, "Expected `)`");
-            if(auto scope = parse_scope()){
-                stmt_if->body = (*scope)->stmts;
+            if(peek().has_value()&&peek().value().type == TokenType::close_paren){
+                consume();
+                if(auto scope = parse_scope()){
+                    stmt_if->body = (*scope)->stmts;
+                }
+                else{
+                    std::cerr << "Invalid scope on if statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<NodeStmt>();
+                stmt->var = stmt_if;
+                return stmt;
             }
             else{
-                std::cerr << "Invalid scope" << std::endl;
-                exit(EXIT_FAILURE);
+                stmt_if->comparison = m_allocator.alloc<NodeComparison>();
+                stmt_if->comparison->comp = consume();                      //consumes comparison
+                if(auto rhs = parse_expr()){
+                    stmt_if->rhs = rhs.value();
+                }
+                else {
+                    std::cerr << "Invalid expression" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                try_consume(TokenType::close_paren, "Expected `)`");
+                if(auto scope = parse_scope()){
+                    stmt_if->body = (*scope)->stmts;
+                }
+                else{
+                    std::cerr << "Invalid scope on if statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto stmt = m_allocator.alloc<NodeStmt>();
+                stmt->var = stmt_if;
+                return stmt;
             }
-            auto stmt = m_allocator.alloc<NodeStmt>();
-            stmt->var = stmt_if;
-            return stmt;
         }
 
         else if(auto open_curly = try_consume(TokenType::open_curly)) {

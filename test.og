@@ -1,6 +1,6 @@
 let x be 3;
 
-if (2+1+1==x+1){
+if (2-3){
     let y = 10;
     {
         let z = 9;  
