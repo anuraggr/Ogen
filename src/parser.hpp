@@ -203,6 +203,20 @@ public:
         return expr_lhs;
     }
 
+    std::optional<NodeStmtScope*> parse_scope(){
+        if(auto open_curly = try_consume(TokenType::open_curly)){
+            auto scope = m_allocator.alloc<NodeStmtScope>();
+            while(auto stmt = parse_stmt()){
+                scope->stmts.push_back(stmt.value());
+            }
+            try_consume(TokenType::close_curly, "Expected `}`");
+            return scope;
+        }
+        else{
+            return {};
+        }
+    } 
+
     std::optional<NodeStmt*> parse_stmt()
     {
         if (peek().value().type == TokenType::exit && peek(1).has_value()
@@ -246,62 +260,40 @@ public:
             return stmt;
         }
 
-        // else if(peek().has_value() && peek().value().type == TokenType::if_condition){
-        //     consume();
-        //     try_consume(TokenType::open_paren, "Expected `(`");
-        //     std::cout << "If" << std::endl; //debug
-        //     if(auto lhs = parse_expr()){
-        //         auto stmt_if = m_allocator.alloc<NodeStmtIf>();
-        //     }
-        // }
-        else if (peek().has_value() && peek().value().type == TokenType::if_condition 
-                && peek(1).has_value() && (peek(1).value().type == TokenType::ident 
-                || peek(1).value().type == TokenType::int_lit || peek(1).value().type == TokenType::open_paren) 
-                && peek(2).has_value() && (peek(2).value().type == TokenType::eq_eq 
-                || peek(2).value().type == TokenType::greater_than 
-                || peek(2).value().type == TokenType::less_than || peek(2).value().type == TokenType::greater_eq 
-                || peek(2).value().type == TokenType::less_eq)
-                && peek(3).has_value() && (peek(3).value().type == TokenType::ident 
-                || peek(3).value().type == TokenType::int_lit || peek(3).value().type == TokenType::open_paren)) {
-                    consume(); //consumes if
-                    std::cout << "If" << std::endl;
-                    auto stmt_if = m_allocator.alloc<NodeStmtIf>();
-                    if (auto lhs = parse_expr()){
-                        stmt_if->lhs = lhs.value();
-                    }
-                    else{
-                        std::cerr << "Invalid expression" << std::endl;
-                        exit(EXIT_FAILURE);
-                    }
-                    stmt_if->comparison = m_allocator.alloc<NodeComparison>();
-                    stmt_if->comparison->comp = consume();                      //consumes comparison
-                    if (auto rhs = parse_expr()){
-                        stmt_if->rhs = rhs.value();
-                    }
-                    else{
-                        std::cerr << "Invalid expression" << std::endl;
-                        exit(EXIT_FAILURE);
-                    }
-                    while(peek().has_value() && peek().value().type != TokenType::end_if){
-                        if(auto stmt = parse_stmt()){
-                            stmt_if->body.push_back(stmt.value());
-                        }
-                        else{
-                            std::cerr << "Exited with error: Invalid statement" << std::endl;
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    if(peek().has_value() && peek().value().type == TokenType::end_if){
-                        consume(); //consumes end_if
-                    }
-                    else{
-                        std::cerr << "Expected end_if" << std::endl;
-                        exit(EXIT_FAILURE);
-                    }
-                    auto stmt = m_allocator.alloc<NodeStmt>();
-                    stmt->var = stmt_if;
-                    return stmt;
-                }
+        else if(peek().has_value() && peek().value().type == TokenType::if_condition){
+            consume();
+            try_consume(TokenType::open_paren, "Expected `(`");
+            std::cout << "If" << std::endl; //debug
+            auto stmt_if = m_allocator.alloc<NodeStmtIf>();
+            if(auto lhs = parse_expr()){
+                stmt_if->lhs = lhs.value();
+            }
+            else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            stmt_if->comparison = m_allocator.alloc<NodeComparison>();
+            stmt_if->comparison->comp = consume();                      //consumes comparison
+            if(auto rhs = parse_expr()){
+                stmt_if->rhs = rhs.value();
+            }
+            else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_paren, "Expected `)`");
+            if(auto scope = parse_scope()){
+                stmt_if->body = (*scope)->stmts;
+            }
+            else{
+                std::cerr << "Invalid scope" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            auto stmt = m_allocator.alloc<NodeStmt>();
+            stmt->var = stmt_if;
+            return stmt;
+        }
+
         else if(auto open_curly = try_consume(TokenType::open_curly)) {
             std::cout << "Scope Open" << std::endl; //debug
             auto scope = m_allocator.alloc<NodeStmtScope>();

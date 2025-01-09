@@ -23,7 +23,7 @@ public:
                     return var.name == term_ident->ident.value.value();
                 });
                 if(it == gen->m_vars.end()){
-                    std::cerr << "Identifier not found: " << term_ident->ident.value.value() << std::endl;
+                    std::cerr << "Identifier decleared in scope: " << term_ident->ident.value.value() << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 std::stringstream offset;
@@ -166,9 +166,13 @@ public:
                     std::cerr << "Invalid comparison" << std::endl;
                     exit(EXIT_FAILURE);
                 }
+
+                gen->begin_scope();
                 for(const NodeStmt* stmt : if_condition->body){
                     gen->gen_stmt(stmt);
                 }
+                gen->end_scope();
+
                 gen->m_output << "    " <<  end_label << ":\n";
             } 
         };

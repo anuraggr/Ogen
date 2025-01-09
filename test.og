@@ -1,11 +1,10 @@
 let x be 3;
 
-if x==3
-    let y = 4;
-end_if
-{
-    let z = 10;
-    exit(z);
+if (2+1+1==x+1){
+    let y = 10;
+    {
+        let z = 9;  
+    }
+    exit(y);
 }
-
-exit(y);
+exit(x);
