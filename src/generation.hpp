@@ -147,7 +147,7 @@ public:
                 gen->m_output << "    cmp rax, rbx\n";
 
                 std::string end_label = gen->generate_label("end_if");
-                if(if_condition->comparison->comp.type == TokenType::eq){
+                if(if_condition->comparison->comp.type == TokenType::eq_eq){
                     gen->m_output << "    jne " << end_label << "\n";
                 }
                 else if(if_condition->comparison->comp.type == TokenType::greater_than){

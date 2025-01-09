@@ -12,7 +12,7 @@ enum class TokenType {
     close_paren,
     ident,
     let,
-    be,
+    eq,
     plus,
     star,
     sub,
@@ -23,7 +23,7 @@ enum class TokenType {
     close_curly,
     if_condition,
     end_if,
-    eq,
+    eq_eq,
     greater_than,
     less_than,
     greater_eq,
@@ -35,7 +35,7 @@ TokenType getStringToTokenType(const std::string& inString){
         static const std::unordered_map<std::string, TokenType> tokenMap = {
             {"exit", TokenType::exit},
             {"let", TokenType::let},
-            {"be", TokenType::be},
+            {"be", TokenType::eq},
             {"if", TokenType::if_condition},
             {"end_if", TokenType::end_if}
         };
@@ -74,7 +74,7 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::close_paren: os << "close_prem"; break;
             case TokenType::ident: os << "ident"; break;
             case TokenType::let: os << "let"; break;
-            case TokenType::be: os << "eq"; break;
+            case TokenType::eq: os << "eq"; break;
             case TokenType::plus: os << "plus"; break;
             case TokenType::star: os << "star"; break;
             case TokenType::sub: os << "sub"; break;
@@ -130,9 +130,9 @@ class Tokenizer {
                             tokens.push_back({ .type = TokenType::let });
                             buf.clear();
                             break;
-                        case TokenType::be:
-                            std::cout << "Buffer is be" << std::endl; //debug
-                            tokens.push_back({ .type = TokenType::be });
+                        case TokenType::eq:
+                            std::cout << "Buffer is eq" << std::endl; //debug
+                            tokens.push_back({ .type = TokenType::eq });
                             buf.clear();
                             break;
                         case TokenType::if_condition:
@@ -185,12 +185,12 @@ class Tokenizer {
                             if(peek(1).has_value() && peek(1).value() == '='){
                                 consume();
                                 consume();
-                                tokens.push_back({ .type = TokenType::eq});
+                                tokens.push_back({ .type = TokenType::eq_eq});
                                 std::cout << "Buffer is ==" << std::endl;
                                 break;
                             }
                             consume();
-                            tokens.push_back({ .type = TokenType::be});
+                            tokens.push_back({ .type = TokenType::eq});
                             break;
                         case '>':
                             if(peek(1).has_value() && peek(1).value()=='='){

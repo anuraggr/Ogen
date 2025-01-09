@@ -13,6 +13,14 @@ _start:
     mov rax, 4
     push rax
     end_if_0:
+    mov rax, 10
+    push rax
+    push QWORD [rsp + 0]
+
+    mov rax, 60
+    pop rdi
+    syscall
+    add rsp, 8
     push QWORD [rsp + 0]
 
     mov rax, 60

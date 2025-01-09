@@ -227,7 +227,7 @@ public:
         else if (
             peek().has_value() && peek().value().type == TokenType::let && peek(1).has_value()
             && peek(1).value().type == TokenType::ident && peek(2).has_value()
-            && peek(2).value().type == TokenType::be) {
+            && peek(2).value().type == TokenType::eq) {
             consume();
             std::cout << "Let" << std::endl;
             auto stmt_let = m_allocator.alloc<NodeStmtLet>();
@@ -245,10 +245,19 @@ public:
             stmt->var = stmt_let;
             return stmt;
         }
+
+        // else if(peek().has_value() && peek().value().type == TokenType::if_condition){
+        //     consume();
+        //     try_consume(TokenType::open_paren, "Expected `(`");
+        //     std::cout << "If" << std::endl; //debug
+        //     if(auto lhs = parse_expr()){
+        //         auto stmt_if = m_allocator.alloc<NodeStmtIf>();
+        //     }
+        // }
         else if (peek().has_value() && peek().value().type == TokenType::if_condition 
                 && peek(1).has_value() && (peek(1).value().type == TokenType::ident 
                 || peek(1).value().type == TokenType::int_lit || peek(1).value().type == TokenType::open_paren) 
-                && peek(2).has_value() && (peek(2).value().type == TokenType::eq 
+                && peek(2).has_value() && (peek(2).value().type == TokenType::eq_eq 
                 || peek(2).value().type == TokenType::greater_than 
                 || peek(2).value().type == TokenType::less_than || peek(2).value().type == TokenType::greater_eq 
                 || peek(2).value().type == TokenType::less_eq)

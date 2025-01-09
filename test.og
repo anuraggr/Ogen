@@ -1,7 +1,11 @@
 let x be 3;
 
 if x==3
-    let y be 4;
+    let y = 4;
 end_if
+{
+    let z = 10;
+    exit(z);
+}
 
 exit(y);
