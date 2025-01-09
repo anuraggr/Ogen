@@ -294,6 +294,17 @@ public:
                     stmt->var = stmt_if;
                     return stmt;
                 }
+        else if(auto open_curly = try_consume(TokenType::open_curly)) {
+            std::cout << "Scope Open" << std::endl; //debug
+            auto scope = m_allocator.alloc<NodeStmtScope>();
+            while (auto stmt = parse_stmt()) {
+                    scope->stmts.push_back(stmt.value());
+                }
+                try_consume(TokenType::close_curly, "Expected `}`");
+                auto stmt = m_allocator.alloc<NodeStmt>();
+                stmt->var = scope;
+                return stmt;
+        }
         else {
             return {};
         }

@@ -1,7 +1,11 @@
 let x be 3;
 
-if x >= 4 then                #test commmnt
-    let y be x+1;
-end_if
+{
+    let y = 2;
+    {
+        let y = 6;
+    }
+}
+let y = 1;
 
 exit(y);
