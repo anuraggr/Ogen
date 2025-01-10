@@ -1,10 +1,18 @@
 let x be 3;
 
-if (2-3){
-    let y = 10;
-    {
-        let z = 9;  
+if (x == 3){
+    if(x == 4){
+        exit(110);
     }
-    exit(y);
+    exit(101);
+}
+else {
+    if(x==100){
+        exit(100);
+    }
+    else {
+        let z = 20;
+        exit(z);
+    }
 }
 exit(x);

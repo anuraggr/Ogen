@@ -22,7 +22,8 @@ enum class TokenType {
     open_curly,
     close_curly,
     if_condition,
-    end_if,
+    elif,
+    else_condition,
     eq_eq,
     greater_than,
     less_than,
@@ -37,7 +38,8 @@ TokenType getStringToTokenType(const std::string& inString){
             {"let", TokenType::let},
             {"be", TokenType::eq},
             {"if", TokenType::if_condition},
-            {"end_if", TokenType::end_if}
+            {"elif", TokenType::elif},
+            {"else", TokenType::else_condition}
         };
 
         auto it = tokenMap.find(inString);
@@ -82,7 +84,8 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::open_curly: os << "open_curly"; break;
             case TokenType::close_curly: os << "close_curly"; break;
             case TokenType::if_condition: os << "if"; break;
-            case TokenType::end_if: os << "end_if"; break;
+            case TokenType::elif: os << "else if"; break;
+            case TokenType::else_condition: os << "else"; break;
             case TokenType::greater_than: os << "greater_than"; break;
             case TokenType::less_than: os << "less_than"; break;
             case TokenType::greater_eq: os << "greater_eq"; break;
@@ -140,9 +143,14 @@ class Tokenizer {
                             tokens.push_back({ .type = TokenType::if_condition });
                             buf.clear();
                             break;
-                        case TokenType::end_if:
-                            std::cout << "Buffer is end_if" << std::endl; //debug
-                            tokens.push_back({ .type = TokenType::end_if });
+                        case TokenType::elif:
+                            std::cout << "Buffer is elif" << std::endl; //debug
+                            tokens.push_back({ .type = TokenType::elif });
+                            buf.clear();
+                            break;
+                         case TokenType::else_condition:
+                            std::cout << "Buffer is else" << std::endl; //debug
+                            tokens.push_back({ .type = TokenType::else_condition });
                             buf.clear();
                             break;
                         case TokenType::ident:

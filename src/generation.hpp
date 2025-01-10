@@ -140,7 +140,7 @@ public:
             void operator()(const NodeStmtIf* if_condition) const
             {
                 std::cout << "If statement" << std::endl; //debug
-                if(!if_condition->rhs){
+                if(!if_condition->rhs){                                     //single condition. true false type.
                     gen->gen_expr(if_condition->lhs);
                     gen->pop("rax");
                     gen->m_output << "    cmp rax, 1\n";
@@ -154,7 +154,7 @@ public:
 
                     gen->m_output << "    " <<  end_label << ":\n";
                 }
-                else{
+                else{                                                       //comparison type
                     gen->gen_expr(if_condition->lhs);
                     gen->gen_expr(if_condition->rhs);
                     gen->pop("rbx");
@@ -162,6 +162,8 @@ public:
                     gen->m_output << "    cmp rax, rbx\n";
 
                     std::string end_label = gen->generate_label("end_if");
+                    std::string end_if_else = gen->generate_label("end_if_else");
+                    
                     if(if_condition->comparison->comp.type == TokenType::eq_eq){
                         gen->m_output << "    jne " << end_label << "\n";
                     }
@@ -188,7 +190,17 @@ public:
                     }
                     gen->end_scope();
 
+                    gen->m_output << "    jmp " << end_if_else << "\n";
+                    
                     gen->m_output << "    " <<  end_label << ":\n";
+
+                    gen->begin_scope();
+                    for(const NodeStmt* stmt : if_condition->else_body){
+                        gen->gen_stmt(stmt);
+                    }
+                    gen->end_scope();
+                    gen->m_output << "    " << end_if_else << ":\n";
+
             }   }
         };
 

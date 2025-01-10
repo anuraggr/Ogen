@@ -72,6 +72,7 @@ struct NodeStmtIf {
     NodeExpr* rhs;
     NodeComparison* comparison;
     std::vector<NodeStmt*> body;
+    std::vector<NodeStmt*> else_body;
 };
 
 struct NodeStmtScope {
@@ -303,10 +304,37 @@ public:
                     std::cerr << "Invalid scope on if statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
+                if(peek().has_value() && peek().value().type == TokenType::else_condition){
+                    consume();
+                    if(auto scope = parse_scope()){
+                        stmt_if->else_body = (*scope)->stmts;
+                    }
+                    else{
+                        std::cerr << "Invalid scope on else statement" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                }
                 auto stmt = m_allocator.alloc<NodeStmt>();
                 stmt->var = stmt_if;
                 return stmt;
             }
+            // std::cout << "coafafnsumes else" << std::endl; //debug
+            // if(peek().has_value() && peek().value().type == TokenType::else_condition){
+            //     consume();
+            //     std::cout << "consumes else" << std::endl; //debug
+            //     if(auto scope = parse_scope()){
+            //         stmt_if->else_body = (*scope)->stmts;
+            //     }
+            //     else{
+            //         std::cerr << "Invalid scope on else statement" << std::endl;
+            //         exit(EXIT_FAILURE);
+            //     }
+            //     auto else_scope = m_allocator.alloc<NodeStmtScope>();
+            //     else_scope->stmts = stmt_if->else_body;
+            //     auto stmt = m_allocator.alloc<NodeStmt>();
+            //     stmt->var = else_scope;
+            //     return stmt;
+            // }
         }
 
         else if(auto open_curly = try_consume(TokenType::open_curly)) {
