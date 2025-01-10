@@ -140,47 +140,73 @@ public:
             void operator()(const NodeStmtIf* if_condition) const
             {
                 std::cout << "If statement" << std::endl; //debug
-                if(!if_condition->rhs){                                     //single condition. true false type.
-                    gen->gen_expr(if_condition->lhs);
-                    gen->pop("rax");
-                    gen->m_output << "    cmp rax, 1\n";
-                    std::string end_label = gen->generate_label("end_if");
-                    gen->m_output << "    jl " << end_label << "\n";
-                    gen->begin_scope();
-                    for(const NodeStmt* stmt : if_condition->body){
-                        gen->gen_stmt(stmt);
-                    }
-                    gen->end_scope();
+                gen->gen_expr(if_condition->lhs);
+                gen->gen_expr(if_condition->rhs);
+                gen->pop("rbx");
+                gen->pop("rax");
+                gen->m_output << "    cmp rax, rbx\n";
 
-                    gen->m_output << "    " <<  end_label << ":\n";
+                std::string end_label = gen->generate_label("end_if");
+                std::string end_if_else = gen->generate_label("end_if_else");
+                
+                if(if_condition->comparison->comp.type == TokenType::eq_eq){
+                    gen->m_output << "    jne " << end_label << "\n";
                 }
-                else{                                                       //comparison type
-                    gen->gen_expr(if_condition->lhs);
-                    gen->gen_expr(if_condition->rhs);
+                else if(if_condition->comparison->comp.type == TokenType::greater_than){
+                    gen->m_output << "    jle " << end_label << "\n";
+                }
+                else if(if_condition->comparison->comp.type == TokenType::less_than){
+                    gen->m_output << "    jge " << end_label << "\n";
+                }
+                else if(if_condition->comparison->comp.type == TokenType::greater_eq){
+                    gen->m_output << "    jl " << end_label << "\n";
+                }
+                else if(if_condition->comparison->comp.type == TokenType::less_eq){
+                    gen->m_output << "    jg " << end_label << "\n";
+                }
+                else if(if_condition->comparison->comp.type == TokenType::n_eq){
+                    gen->m_output << "    je " << end_label << "\n";
+                }
+                else{
+                    std::cerr << "Invalid comparison" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                gen->begin_scope();
+                for(const NodeStmt* stmt : if_condition->body){
+                    gen->gen_stmt(stmt);
+                }
+                gen->end_scope();
+
+                gen->m_output << "    jmp " << end_if_else << "\n";         //jump to end of else cuz if condition is true
+                
+                gen->m_output << "    " <<  end_label << ":\n";             //end of if
+
+                for (const NodeStmt* elif_stmt : if_condition->elif_body) {
+                    const NodeStmtIf* elif_condition = std::get<NodeStmtIf*>(elif_stmt->var);
+                    std::string elif_end_label = gen->generate_label("end_elif");
+                    gen->gen_expr(elif_condition->lhs);
+                    gen->gen_expr(elif_condition->rhs);
                     gen->pop("rbx");
                     gen->pop("rax");
                     gen->m_output << "    cmp rax, rbx\n";
-
-                    std::string end_label = gen->generate_label("end_if");
-                    std::string end_if_else = gen->generate_label("end_if_else");
-                    
-                    if(if_condition->comparison->comp.type == TokenType::eq_eq){
-                        gen->m_output << "    jne " << end_label << "\n";
+                    if(elif_condition->comparison->comp.type == TokenType::eq_eq){
+                        gen->m_output << "    jne " << elif_end_label << "\n";
                     }
-                    else if(if_condition->comparison->comp.type == TokenType::greater_than){
-                        gen->m_output << "    jle " << end_label << "\n";
+                    else if(elif_condition->comparison->comp.type == TokenType::greater_than){
+                        gen->m_output << "    jle " << elif_end_label << "\n";
                     }
-                    else if(if_condition->comparison->comp.type == TokenType::less_than){
-                        gen->m_output << "    jge " << end_label << "\n";
+                    else if(elif_condition->comparison->comp.type == TokenType::less_than){
+                        gen->m_output << "    jge " << elif_end_label << "\n";
                     }
-                    else if(if_condition->comparison->comp.type == TokenType::greater_eq){
-                        gen->m_output << "    jl " << end_label << "\n";
+                    else if(elif_condition->comparison->comp.type == TokenType::greater_eq){
+                        gen->m_output << "    jl " << elif_end_label << "\n";
                     }
-                    else if(if_condition->comparison->comp.type == TokenType::less_eq){
-                        gen->m_output << "    jg " << end_label << "\n";
+                    else if(elif_condition->comparison->comp.type == TokenType::less_eq){
+                        gen->m_output << "    jg " << elif_end_label << "\n";
                     }
-                    else if(if_condition->comparison->comp.type == TokenType::n_eq){
-                        gen->m_output << "    je " << end_label << "\n";
+                    else if(elif_condition->comparison->comp.type == TokenType::n_eq){
+                        gen->m_output << "    je " << elif_end_label << "\n";
                     }
                     else{
                         std::cerr << "Invalid comparison" << std::endl;
@@ -188,23 +214,23 @@ public:
                     }
 
                     gen->begin_scope();
-                    for(const NodeStmt* stmt : if_condition->body){
+                    for(const NodeStmt* stmt : elif_condition->body){
                         gen->gen_stmt(stmt);
                     }
                     gen->end_scope();
 
-                    gen->m_output << "    jmp " << end_if_else << "\n";         //jump to end of else cuz if condition is true
+                    gen->m_output << "    jmp " << end_if_else << "\n";         //jump to end of else cuz elif condition is true
                     
-                    gen->m_output << "    " <<  end_label << ":\n";             //end of if
+                    gen->m_output << "    " <<  elif_end_label << ":\n";             //end of elif
+                }
 
-                    gen->begin_scope();
-                    for(const NodeStmt* stmt : if_condition->else_body){
-                        gen->gen_stmt(stmt);
-                    }
-                    gen->end_scope();
-                    gen->m_output << "    " << end_if_else << ":\n";        //end of else
-
-            }   }
+                gen->begin_scope();
+                for(const NodeStmt* stmt : if_condition->else_body){
+                    gen->gen_stmt(stmt);
+                }
+                gen->end_scope();
+                gen->m_output << "    " << end_if_else << ":\n";        //end of else
+            } 
         };
 
         StmtVisitor visitor { .gen = this };
