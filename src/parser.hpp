@@ -263,6 +263,7 @@ public:
 
         else if(peek().has_value() && peek().value().type == TokenType::if_condition){
             consume();
+            if_:
             try_consume(TokenType::open_paren, "Expected `(`");
             std::cout << "If" << std::endl; //debug
             auto stmt_if = m_allocator.alloc<NodeStmtIf>();
@@ -273,30 +274,8 @@ public:
                 std::cerr << "Invalid expression" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            if(peek().has_value()&&peek().value().type == TokenType::close_paren){
+            if(peek().has_value()&&peek().value().type == TokenType::close_paren){          //single condition. true false type.
                 consume();
-                if(auto scope = parse_scope()){
-                    stmt_if->body = (*scope)->stmts;
-                }
-                else{
-                    std::cerr << "Invalid scope on if statement" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                auto stmt = m_allocator.alloc<NodeStmt>();
-                stmt->var = stmt_if;
-                return stmt;
-            }
-            else{
-                stmt_if->comparison = m_allocator.alloc<NodeComparison>();
-                stmt_if->comparison->comp = consume();                      //consumes comparison
-                if(auto rhs = parse_expr()){
-                    stmt_if->rhs = rhs.value();
-                }
-                else {
-                    std::cerr << "Invalid expression" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                try_consume(TokenType::close_paren, "Expected `)`");
                 if(auto scope = parse_scope()){
                     stmt_if->body = (*scope)->stmts;
                 }
@@ -318,23 +297,42 @@ public:
                 stmt->var = stmt_if;
                 return stmt;
             }
-            // std::cout << "coafafnsumes else" << std::endl; //debug
-            // if(peek().has_value() && peek().value().type == TokenType::else_condition){
-            //     consume();
-            //     std::cout << "consumes else" << std::endl; //debug
-            //     if(auto scope = parse_scope()){
-            //         stmt_if->else_body = (*scope)->stmts;
-            //     }
-            //     else{
-            //         std::cerr << "Invalid scope on else statement" << std::endl;
-            //         exit(EXIT_FAILURE);
-            //     }
-            //     auto else_scope = m_allocator.alloc<NodeStmtScope>();
-            //     else_scope->stmts = stmt_if->else_body;
-            //     auto stmt = m_allocator.alloc<NodeStmt>();
-            //     stmt->var = else_scope;
-            //     return stmt;
-            // }
+            else{                                                                           //comparison type
+                stmt_if->comparison = m_allocator.alloc<NodeComparison>();
+                stmt_if->comparison->comp = consume();                      //consumes comparison
+                if(auto rhs = parse_expr()){
+                    stmt_if->rhs = rhs.value();
+                }
+                else {
+                    std::cerr << "Invalid expression" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                try_consume(TokenType::close_paren, "Expected `)`");
+                if(auto scope = parse_scope()){
+                    stmt_if->body = (*scope)->stmts;
+                }
+                else{
+                    std::cerr << "Invalid scope on if statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                if(peek().has_value() && peek().value().type == TokenType::elif) {              //elif
+                    consume();
+                    goto if_;
+                }
+                if(peek().has_value() && peek().value().type == TokenType::else_condition){
+                    consume();
+                    if(auto scope = parse_scope()){
+                        stmt_if->else_body = (*scope)->stmts;
+                    }
+                    else{
+                        std::cerr << "Invalid scope on else statement" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                auto stmt = m_allocator.alloc<NodeStmt>();
+                stmt->var = stmt_if;
+                return stmt;
+            }
         }
 
         else if(auto open_curly = try_consume(TokenType::open_curly)) {

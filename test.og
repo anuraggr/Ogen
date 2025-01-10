@@ -1,18 +1,18 @@
 let x be 3;
 
-if (x == 3){
+if (x == 4){
     if(x == 4){
         exit(110);
     }
     exit(101);
 }
+elif (x==1){
+    exit(69);
+}
+elif( x == 2){
+    exit(7);
+}
 else {
-    if(x==100){
-        exit(100);
-    }
-    else {
-        let z = 20;
-        exit(z);
-    }
+    let k = 9;
 }
 exit(x);

@@ -190,16 +190,16 @@ public:
                     }
                     gen->end_scope();
 
-                    gen->m_output << "    jmp " << end_if_else << "\n";
+                    gen->m_output << "    jmp " << end_if_else << "\n";         //jump to end of else cuz if condition is true
                     
-                    gen->m_output << "    " <<  end_label << ":\n";
+                    gen->m_output << "    " <<  end_label << ":\n";             //end of if
 
                     gen->begin_scope();
                     for(const NodeStmt* stmt : if_condition->else_body){
                         gen->gen_stmt(stmt);
                     }
                     gen->end_scope();
-                    gen->m_output << "    " << end_if_else << ":\n";
+                    gen->m_output << "    " << end_if_else << ":\n";        //end of else
 
             }   }
         };
