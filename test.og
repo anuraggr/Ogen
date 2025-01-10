@@ -1,14 +1,11 @@
-let x = 4;
+let x = 5;
 
-if(5){
+if(x){
     exit(100);
 }
 
-elif(x==4){
-    if(x!=4){
-        exit(74);
-    }
-    exit(9);
+elif(1){
+    exit(74);
 }
 
 else {

@@ -206,6 +206,54 @@ public:
         }
     }
 
+//function to parse elif in the if-statement
+    void resolveElif(NodeStmtIf* stmt_if){
+        while (peek().has_value() && peek().value().type == TokenType::elif) {
+            consume();
+            try_consume(TokenType::open_paren, "Expected `(`");
+            auto elif_stmt = m_allocator.alloc<NodeStmtIf>();
+            if (auto lhs = parse_expr()) {
+                elif_stmt->lhs = lhs.value();
+            } else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            if(peek().has_value() && peek().value().type == TokenType::close_paren){
+                consume();
+                if(auto scope = parse_scope()){
+                    elif_stmt->body = scope.value()->stmts;
+                }
+                else{
+                    std::cerr << "Invalid scope on if statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto elif_stmt_node = m_allocator.alloc<NodeStmt>();
+                elif_stmt_node->var = elif_stmt;
+                stmt_if->elif_body.push_back(elif_stmt_node);
+            }
+            else{
+                elif_stmt->comparison = m_allocator.alloc<NodeComparison>();
+                elif_stmt->comparison->comp = consume(); // consumes comparison
+                if (auto rhs = parse_expr()) {
+                    elif_stmt->rhs = rhs.value();
+                } else {
+                    std::cerr << "Invalid expression" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                try_consume(TokenType::close_paren, "Expected `)`");
+                if (auto scope = parse_scope()) {
+                    elif_stmt->body = scope.value()->stmts;
+                } else {
+                    std::cerr << "Invalid scope on elif statement" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                auto elif_stmt_node = m_allocator.alloc<NodeStmt>();
+                elif_stmt_node->var = elif_stmt;
+                stmt_if->elif_body.push_back(elif_stmt_node);
+            }
+        }
+    }
+
     std::optional<NodeStmt *> parse_stmt() {
         if (peek().value().type == TokenType::exit && peek(1).has_value() && peek(1).value().type == TokenType::open_paren) {
             consume();
@@ -254,49 +302,34 @@ public:
                 std::cerr << "Invalid expression" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            stmt_if->comparison = m_allocator.alloc<NodeComparison>();
-            stmt_if->comparison->comp = consume(); // consumes comparison
-            if (auto rhs = parse_expr()) {
-                stmt_if->rhs = rhs.value();
-            } else {
-                std::cerr << "Invalid expression" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-            try_consume(TokenType::close_paren, "Expected `)`");
-            if (auto scope = parse_scope()) {
-                stmt_if->body = scope.value()->stmts;
-            } else {
-                std::cerr << "Invalid scope on if statement" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-            while (peek().has_value() && peek().value().type == TokenType::elif) {
+            if(peek().has_value() && peek().value().type == TokenType::close_paren){
                 consume();
-                try_consume(TokenType::open_paren, "Expected `(`");
-                auto elif_stmt = m_allocator.alloc<NodeStmtIf>();
-                if (auto lhs = parse_expr()) {
-                    elif_stmt->lhs = lhs.value();
-                } else {
-                    std::cerr << "Invalid expression" << std::endl;
+                if(auto scope = parse_scope()){
+                    stmt_if->body = scope.value()->stmts;
+                }
+                else{
+                    std::cerr << "Invalid scope on if statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                elif_stmt->comparison = m_allocator.alloc<NodeComparison>();
-                elif_stmt->comparison->comp = consume(); // consumes comparison
+                resolveElif(stmt_if);
+            }
+            else{
+                stmt_if->comparison = m_allocator.alloc<NodeComparison>();
+                stmt_if->comparison->comp = consume(); // consumes comparison
                 if (auto rhs = parse_expr()) {
-                    elif_stmt->rhs = rhs.value();
+                    stmt_if->rhs = rhs.value();
                 } else {
                     std::cerr << "Invalid expression" << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 try_consume(TokenType::close_paren, "Expected `)`");
                 if (auto scope = parse_scope()) {
-                    elif_stmt->body = scope.value()->stmts;
+                    stmt_if->body = scope.value()->stmts;
                 } else {
-                    std::cerr << "Invalid scope on elif statement" << std::endl;
+                    std::cerr << "Invalid scope on if statement" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                auto elif_stmt_node = m_allocator.alloc<NodeStmt>();
-                elif_stmt_node->var = elif_stmt;
-                stmt_if->elif_body.push_back(elif_stmt_node);
+                resolveElif(stmt_if);
             }
             if (peek().has_value() && peek().value().type == TokenType::else_condition) {
                 consume();
