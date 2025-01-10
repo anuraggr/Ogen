@@ -29,7 +29,8 @@ enum class TokenType {
     less_than,
     greater_eq,
     less_eq,
-    n_eq
+    n_eq,
+    while_condition
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
@@ -40,7 +41,8 @@ TokenType getStringToTokenType(const std::string& inString){
             {"be", TokenType::eq},
             {"if", TokenType::if_condition},
             {"elif", TokenType::elif},
-            {"else", TokenType::else_condition}
+            {"else", TokenType::else_condition},
+            {"while", TokenType::while_condition}
         };
 
         auto it = tokenMap.find(inString);
@@ -153,6 +155,11 @@ class Tokenizer {
                          case TokenType::else_condition:
                             std::cout << "Buffer is else" << std::endl; //debug
                             tokens.push_back({ .type = TokenType::else_condition });
+                            buf.clear();
+                            break;
+                        case TokenType::while_condition:
+                            std::cout << "Buffer is while" << std::endl; //debug
+                            tokens.push_back({ .type = TokenType::while_condition });
                             buf.clear();
                             break;
                         case TokenType::ident:

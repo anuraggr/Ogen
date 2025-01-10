@@ -272,7 +272,41 @@ public:
                     
                 }
                 gen->m_output << "    " << end_if_else << ":\n"; // end of else
-    }
+            }
+            void operator()(const NodeStmtWhile* while_condition) const {
+                std::cout << "While statement" << std::endl; // debug
+                std::string start_label = gen->generate_label("start_while");
+                std::string end_label = gen->generate_label("end_while");
+                gen->m_output << "    " << start_label << ":\n";
+                gen->gen_expr(while_condition->lhs);
+                gen->gen_expr(while_condition->rhs);
+                gen->pop("rbx");
+                gen->pop("rax");
+                gen->m_output << "    cmp rax, rbx\n";
+                if (while_condition->comparison->comp.type == TokenType::eq_eq) {
+                    gen->m_output << "    jne " << end_label << "\n";
+                } else if (while_condition->comparison->comp.type == TokenType::greater_than) {
+                    gen->m_output << "    jle " << end_label << "\n";
+                } else if (while_condition->comparison->comp.type == TokenType::less_than) {
+                    gen->m_output << "    jge " << end_label << "\n";
+                } else if (while_condition->comparison->comp.type == TokenType::greater_eq) {
+                    gen->m_output << "    jl " << end_label << "\n";
+                } else if (while_condition->comparison->comp.type == TokenType::less_eq) {
+                    gen->m_output << "    jg " << end_label << "\n";
+                } else if (while_condition->comparison->comp.type == TokenType::n_eq) {
+                    gen->m_output << "    je " << end_label << "\n";
+                } else {
+                    std::cerr << "Invalid comparison" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                gen->begin_scope();
+                for (const NodeStmt *stmt : while_condition->body) {
+                    gen->gen_stmt(stmt);
+                }
+                gen->end_scope();
+                gen->m_output << "    jmp " << start_label << "\n";
+                gen->m_output << "    " << end_label << ":\n";
+            }
         };
 
         StmtVisitor visitor { .gen = this };

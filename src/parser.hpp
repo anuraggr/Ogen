@@ -75,12 +75,19 @@ struct NodeStmtIf {
     std::vector<NodeStmt *> else_body;
 };
 
+struct NodeStmtWhile {
+    NodeExpr *lhs;
+    NodeExpr *rhs;
+    NodeComparison *comparison;
+    std::vector<NodeStmt *> body;
+};
+
 struct NodeStmtScope {
     std::vector<NodeStmt *> stmts;
 };
 
 struct NodeStmt {
-    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *> var;
+    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, NodeStmtWhile *> var;
 };
 
 struct NodeProg {
@@ -342,6 +349,34 @@ public:
             }
             auto stmt = m_allocator.alloc<NodeStmt>();
             stmt->var = stmt_if;
+            return stmt;
+        }
+
+//WHILE
+        else if(peek().has_value() && peek().value().type == TokenType::while_condition){
+            consume();
+            try_consume(TokenType::open_paren, "Expected '('");
+            auto stmt_while = m_allocator.alloc<NodeStmtWhile>();
+            if(auto lhs = parse_expr()){
+                stmt_while->lhs = lhs.value();
+            } else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            stmt_while->comparison = m_allocator.alloc<NodeComparison>();
+            stmt_while->comparison->comp = consume();
+            if (auto rhs = parse_expr()) {
+                stmt_while->rhs = rhs.value();
+            } else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_paren, "Expected ')");
+            if(auto scope = parse_scope()){
+                stmt_while->body = scope.value()->stmts;
+            }
+            auto stmt = m_allocator.alloc<NodeStmt>();
+            stmt->var = stmt_while;
             return stmt;
         }
 
