@@ -1,18 +1,10 @@
-let x be 3;
+let x = 3;
 
-if (x == 4){
-    if(x == 4){
-        exit(110);
-    }
-    exit(101);
+if(x == 3){
+    exit(100);
 }
-elif (x==1){
-    exit(69);
-}
-elif( x == 2){
-    exit(7);
-}
-else {
-    let k = 9;
+
+elif(x == 10){
+    exit(9);
 }
 exit(x);

@@ -29,6 +29,7 @@ enum class TokenType {
     less_than,
     greater_eq,
     less_eq,
+    n_eq
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
@@ -90,6 +91,7 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::less_than: os << "less_than"; break;
             case TokenType::greater_eq: os << "greater_eq"; break;
             case TokenType::less_eq: os << "less_eq"; break;
+            case TokenType::n_eq: os << "not_eq"; break;
          }
          return os;
      }
@@ -223,6 +225,15 @@ class Tokenizer {
                             consume();
                             tokens.push_back({ .type = TokenType::less_than});
                             std::cout << "Buffer is <" << std::endl;
+                            break;
+                        case '!':
+                            if(peek(1).has_value() && peek(1).value()=='='){
+                                consume();
+                                consume();
+                                tokens.push_back({ .type = TokenType::n_eq});
+                                std::cout << "Buffer is !=" << std::endl;
+                                break;
+                            }
                             break;
                         case '+':
                             if(peek(1).has_value() && peek(1).value() == '+' && peek(2).has_value() 

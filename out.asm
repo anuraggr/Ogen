@@ -4,13 +4,13 @@ _start:
     push rax
     push QWORD [rsp + 0]
 
-    mov rax, 2
+    mov rax, 10
     push rax
     pop rbx
     pop rax
     cmp rax, rbx
     jne end_if_0
-    mov rax, 7
+    mov rax, 9
     push rax
     mov rax, 60
     pop rdi
@@ -18,9 +18,7 @@ _start:
     add rsp, 0
     jmp end_if_else_1
     end_if_0:
-    mov rax, 9
-    push rax
-    add rsp, 8
+    add rsp, 0
     end_if_else_1:
     push QWORD [rsp + 0]
 

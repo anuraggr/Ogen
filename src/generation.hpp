@@ -179,6 +179,9 @@ public:
                     else if(if_condition->comparison->comp.type == TokenType::less_eq){
                         gen->m_output << "    jg " << end_label << "\n";
                     }
+                    else if(if_condition->comparison->comp.type == TokenType::n_eq){
+                        gen->m_output << "    je " << end_label << "\n";
+                    }
                     else{
                         std::cerr << "Invalid comparison" << std::endl;
                         exit(EXIT_FAILURE);
