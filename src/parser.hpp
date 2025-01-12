@@ -86,8 +86,13 @@ struct NodeStmtScope {
     std::vector<NodeStmt *> stmts;
 };
 
+struct NodeStmtAssign {
+    NodeTermIdent* lhs;
+    NodeExpr *rhs;
+};
+
 struct NodeStmt {
-    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, NodeStmtWhile *> var;
+    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, NodeStmtWhile *, NodeStmtAssign *> var;
 };
 
 struct NodeProg {
@@ -296,6 +301,26 @@ public:
             stmt->var = stmt_let;
             return stmt;
         }
+
+        else if(peek().has_value() && peek().value().type == TokenType::ident){
+            auto stmt_assign = m_allocator.alloc<NodeStmtAssign>();
+            auto term_ident = m_allocator.alloc<NodeTermIdent>();
+            term_ident->ident = consume();
+            stmt_assign->lhs = term_ident;
+            try_consume(TokenType::eq, "Incomplete statement");
+            if(auto rhs = parse_expr()){
+                stmt_assign->rhs = rhs.value();
+            }
+            else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+                }
+            try_consume(TokenType::semi, "Expected `;`");
+            auto stmt = m_allocator.alloc<NodeStmt>();
+            stmt->var = stmt_assign;
+            return stmt;
+        }
+
 
 //IF CONDITION
         else if (peek().has_value() && peek().value().type == TokenType::if_condition) {

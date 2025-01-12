@@ -1,7 +1,7 @@
-let x = 5;
+let x = 10;
 
-while(x>5){
-    let y=6;
-    exit(7);
+while(x>=3){
+    let y = 10;
+    x = x -1;
 }
 exit(x);

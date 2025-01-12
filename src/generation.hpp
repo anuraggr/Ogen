@@ -24,7 +24,7 @@ public:
                     return var.name == term_ident->ident.value.value();
                 });
                 if(it == gen->m_vars.end()){
-                    std::cerr << "Identifier decleared in scope: " << term_ident->ident.value.value() << std::endl;
+                    std::cerr << "Identifier not decleared in scope: " << term_ident->ident.value.value() << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 std::stringstream offset;
@@ -306,6 +306,18 @@ public:
                 gen->end_scope();
                 gen->m_output << "    jmp " << start_label << "\n";
                 gen->m_output << "    " << end_label << ":\n";
+            }
+            void operator()(const NodeStmtAssign* stmt_assign) const {
+                auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), [&](const auto &var) {
+                    return var.name == stmt_assign->lhs->ident.value.value();
+                });
+                if (it == gen->m_vars.cend()) {
+                    std::cerr << "Identifier never decleared: " << stmt_assign->lhs->ident.value.value() << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                gen->gen_expr(stmt_assign->rhs);
+                gen->pop("rax");
+                gen->m_output << "    mov QWORD [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
             }
         };
 
