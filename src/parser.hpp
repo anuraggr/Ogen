@@ -82,6 +82,17 @@ struct NodeStmtWhile {
     std::vector<NodeStmt *> body;
 };
 
+struct NodeStmtAssign;
+
+struct NodeStmtFor {
+    std::variant<NodeStmtLet *, NodeStmtAssign *> init;
+    NodeExpr *condition_lhs;
+    NodeExpr *condition_rhs;
+    NodeComparison *comparision;
+    NodeStmtAssign *change;
+    std::vector<NodeStmt *> body;
+};
+
 struct NodeStmtScope {
     std::vector<NodeStmt *> stmts;
 };
@@ -92,7 +103,7 @@ struct NodeStmtAssign {
 };
 
 struct NodeStmt {
-    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, NodeStmtWhile *, NodeStmtAssign *> var;
+    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, NodeStmtWhile *, NodeStmtFor *, NodeStmtAssign *> var;
 };
 
 struct NodeProg {
@@ -283,7 +294,10 @@ public:
             auto stmt = m_allocator.alloc<NodeStmt>();
             stmt->var = stmt_exit;
             return stmt;
-        } else if (
+        }
+
+//LET
+        else if (
             peek().has_value() && peek().value().type == TokenType::let && peek(1).has_value() && peek(1).value().type == TokenType::ident && peek(2).has_value() && peek(2).value().type == TokenType::eq) {
             consume();
             std::cout << "Let" << std::endl;
@@ -405,21 +419,104 @@ public:
             return stmt;
         }
 
-//SCOPE
+//FOR LOOP
+
+        else if(peek().has_value() && peek().value().type == TokenType::for_loop){
+            consume();
+            try_consume(TokenType::open_paren, "Expected '('");
+            auto stmt_for = m_allocator.alloc<NodeStmtFor>();
+
+            if(peek().has_value() && peek().value().type == TokenType::let){
+            consume();
+                if(peek().has_value() && peek().value().type == TokenType::ident && peek(1).has_value() && peek(1).value().type == TokenType::eq) {
+                    std::cout << "Let" << std::endl;
+                    auto stmt_let = m_allocator.alloc<NodeStmtLet>();
+                    stmt_let->ident = consume(); // consumes indet
+                    consume();                   // consumes =
+                    if (auto expr = parse_expr()) {
+                        stmt_let->expr = expr.value();
+                    } else {
+                        std::cerr << "Invalid expression" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    stmt_for->init = stmt_let;
+                }
+                else {
+                    std::cerr << "Incorrect identifier initialization in for loop" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+            } else if (peek().has_value() && peek().value().type == TokenType::ident){
+                auto stmt_assign = m_allocator.alloc<NodeStmtAssign>();
+                auto term_ident = m_allocator.alloc<NodeTermIdent>();
+                term_ident->ident = consume();
+                stmt_assign->lhs = term_ident;
+                try_consume(TokenType::eq, "Incomplete statement");
+                if (auto rhs = parse_expr()) {
+                    stmt_assign->rhs = rhs.value();
+                } else {
+                    std::cerr << "Invalid expression" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                stmt_for->init = stmt_assign;
+            }
+
+            try_consume(TokenType::semi, "Expected `;`");
+
+            if (auto lhs = parse_expr()) {
+                stmt_for->condition_lhs = lhs.value();
+            } else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            stmt_for->comparision = m_allocator.alloc<NodeComparison>();
+            stmt_for->comparision->comp = consume();
+            if (auto rhs = parse_expr()) {
+                stmt_for->condition_rhs = rhs.value();
+            } else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::semi, "Expected `;`");
+
+            if(peek().has_value() && peek().value().type != TokenType::close_paren) {
+                auto stmt_assign = m_allocator.alloc<NodeStmtAssign>();
+                auto term_ident = m_allocator.alloc<NodeTermIdent>();
+                term_ident->ident = consume();
+                stmt_assign->lhs = term_ident;
+                try_consume(TokenType::eq, "Incomplete statement");
+                if (auto rhs = parse_expr()) {
+                    stmt_assign->rhs = rhs.value();
+                } else {
+                    std::cerr << "Invalid expression" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                stmt_for->change = stmt_assign;
+            }
+            try_consume(TokenType::close_paren, "Expected ')'");
+
+            if (auto scope = parse_scope()) {
+                stmt_for->body = scope.value()->stmts;
+            }
+
+            auto stmt = m_allocator.alloc<NodeStmt>();
+            stmt->var = stmt_for;
+            return stmt;
+        }
+// SCOPE
 
         else if (auto open_curly = try_consume(TokenType::open_curly)) {
-            std::cout << "Scope Open" << std::endl; // debug
-            auto scope = m_allocator.alloc<NodeStmtScope>();
-            while (auto stmt = parse_stmt()) {
-                scope->stmts.push_back(stmt.value());
+                std::cout << "Scope Open" << std::endl; // debug
+                auto scope = m_allocator.alloc<NodeStmtScope>();
+                while (auto stmt = parse_stmt()) {
+                    scope->stmts.push_back(stmt.value());
+                }
+                try_consume(TokenType::close_curly, "Expected `}`");
+                auto stmt = m_allocator.alloc<NodeStmt>();
+                stmt->var = scope;
+                return stmt;
+            } else {
+                return {};
             }
-            try_consume(TokenType::close_curly, "Expected `}`");
-            auto stmt = m_allocator.alloc<NodeStmt>();
-            stmt->var = scope;
-            return stmt;
-        } else {
-            return {};
-        }
     }
 
     std::optional<NodeProg> parse_prog() {

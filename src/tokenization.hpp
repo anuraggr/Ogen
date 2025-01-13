@@ -30,7 +30,8 @@ enum class TokenType {
     greater_eq,
     less_eq,
     n_eq,
-    while_condition
+    while_condition,
+    for_loop
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
@@ -42,7 +43,8 @@ TokenType getStringToTokenType(const std::string& inString){
             {"if", TokenType::if_condition},
             {"elif", TokenType::elif},
             {"else", TokenType::else_condition},
-            {"while", TokenType::while_condition}
+            {"while", TokenType::while_condition},
+            {"for", TokenType::for_loop}
         };
 
         auto it = tokenMap.find(inString);
@@ -94,6 +96,7 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::greater_eq: os << "greater_eq"; break;
             case TokenType::less_eq: os << "less_eq"; break;
             case TokenType::n_eq: os << "not_eq"; break;
+            case TokenType::for_loop: os << "for_loop"; break;
          }
          return os;
      }
@@ -160,6 +163,11 @@ class Tokenizer {
                         case TokenType::while_condition:
                             std::cout << "Buffer is while" << std::endl; //debug
                             tokens.push_back({ .type = TokenType::while_condition });
+                            buf.clear();
+                            break;
+                        case TokenType::for_loop:
+                            std::cout << "Buffer is for" << std::endl; // debug
+                            tokens.push_back({.type = TokenType::for_loop});
                             buf.clear();
                             break;
                         case TokenType::ident:

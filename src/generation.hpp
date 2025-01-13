@@ -307,6 +307,60 @@ public:
                 gen->m_output << "    jmp " << start_label << "\n";
                 gen->m_output << "    " << end_label << ":\n";
             }
+            void operator()(const NodeStmtFor* stmt_for) const {
+                std::cout << "For statement" << std::endl; // debug
+                std::string start_label = gen->generate_label("start_for");
+                std::string end_label = gen->generate_label("end_for");
+
+                std::visit([&](auto&& init_stmt) {
+                    NodeStmt stmt;
+                    stmt.var = init_stmt;
+                    gen->gen_stmt(&stmt);
+                }, stmt_for->init);
+
+                gen->m_output << "    " << start_label << ":\n";
+                gen->gen_expr(stmt_for->condition_lhs);
+                gen->gen_expr(stmt_for->condition_rhs);
+                gen->pop("rbx");
+                gen->pop("rax");
+                gen->m_output << "    cmp rax, rbx\n";
+                if (stmt_for->comparision->comp.type == TokenType::eq_eq) {
+                    gen->m_output << "    jne " << end_label << "\n";
+                } else if (stmt_for->comparision->comp.type == TokenType::greater_than) {
+                    gen->m_output << "    jle " << end_label << "\n";
+                } else if (stmt_for->comparision->comp.type == TokenType::less_than) {
+                    gen->m_output << "    jge " << end_label << "\n";
+                } else if (stmt_for->comparision->comp.type == TokenType::greater_eq) {
+                    gen->m_output << "    jl " << end_label << "\n";
+                } else if (stmt_for->comparision->comp.type == TokenType::less_eq) {
+                    gen->m_output << "    jg " << end_label << "\n";
+                } else if (stmt_for->comparision->comp.type == TokenType::n_eq) {
+                    gen->m_output << "    je " << end_label << "\n";
+                } else {
+                    std::cerr << "Invalid comparision" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                gen->begin_scope();
+                for (const NodeStmt *stmt : stmt_for->body) {
+                    gen->gen_stmt(stmt);
+                }
+                gen->end_scope();
+
+                auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), [&](const auto &var) {
+                    return var.name == stmt_for->change->lhs->ident.value.value();
+                });
+                if (it == gen->m_vars.cend()) {
+                    std::cerr << "Identifier never declared: " << stmt_for->change->lhs->ident.value.value() << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                gen->gen_expr(stmt_for->change->rhs);
+                gen->pop("rax");
+                gen->m_output << "    mov QWORD [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
+
+                gen->m_output << "    jmp " << start_label << "\n";
+                gen->m_output << "    " << end_label << ":\n";
+            }
             void operator()(const NodeStmtAssign* stmt_assign) const {
                 auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), [&](const auto &var) {
                     return var.name == stmt_assign->lhs->ident.value.value();
