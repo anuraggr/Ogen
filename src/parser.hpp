@@ -5,6 +5,10 @@
 #include "./arena.hpp"
 #include "tokenization.hpp"
 
+
+struct NodeExpr;
+struct NodeStmt;
+
 struct NodeTermIntLit {
     Token int_lit;
 };
@@ -13,10 +17,12 @@ struct NodeTermIdent {
     Token ident;
 };
 
-struct NodeExpr;
-
 struct NodeTermParen {
     NodeExpr *expr;
+};
+
+struct NodeTerm {
+    std::variant<NodeTermIntLit *, NodeTermIdent *, NodeTermParen *> var;
 };
 
 struct NodeBinExprAdd {
@@ -43,12 +49,12 @@ struct NodeBinExpr {
     std::variant<NodeBinExprAdd *, NodeBinExprMulti *, NodeBinExprSub *, NodeBinExprDiv *> var;
 };
 
-struct NodeTerm {
-    std::variant<NodeTermIntLit *, NodeTermIdent *, NodeTermParen *> var;
-};
-
 struct NodeExpr {
     std::variant<NodeTerm *, NodeBinExpr *> var;
+};
+
+struct NodeComparison {
+    Token comp;
 };
 
 struct NodeStmtExit {
@@ -60,11 +66,14 @@ struct NodeStmtLet {
     NodeExpr *expr;
 };
 
-struct NodeComparison {
-    Token comp;
+struct NodeStmtAssign {
+    NodeTermIdent* lhs;
+    NodeExpr *rhs;
 };
 
-struct NodeStmt;
+struct NodeStmtScope {
+    std::vector<NodeStmt *> stmts;
+};
 
 struct NodeStmtIf {
     NodeExpr *lhs;
@@ -82,8 +91,6 @@ struct NodeStmtWhile {
     std::vector<NodeStmt *> body;
 };
 
-struct NodeStmtAssign;
-
 struct NodeStmtFor {
     std::variant<NodeStmtLet *, NodeStmtAssign *> init;
     NodeExpr *condition_lhs;
@@ -93,17 +100,9 @@ struct NodeStmtFor {
     std::vector<NodeStmt *> body;
 };
 
-struct NodeStmtScope {
-    std::vector<NodeStmt *> stmts;
-};
-
-struct NodeStmtAssign {
-    NodeTermIdent* lhs;
-    NodeExpr *rhs;
-};
-
 struct NodeStmt {
-    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, NodeStmtWhile *, NodeStmtFor *, NodeStmtAssign *> var;
+    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, 
+                NodeStmtWhile *, NodeStmtFor *, NodeStmtAssign *> var;
 };
 
 struct NodeProg {

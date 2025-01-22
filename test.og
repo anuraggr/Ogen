@@ -1,9 +1,7 @@
 let x = 1;
 
-for(x = 10; x < 100; x = x + 1){
-    if(x>90){
-        exit(x);
-    }
-}  
+while(x<11) {
+    x = x + 1;
+}
 
 exit(x);
