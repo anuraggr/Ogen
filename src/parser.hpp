@@ -101,6 +101,7 @@ struct NodeStmtFor {
 };
 
 struct NodeFun {
+    Token ident;
     std::vector<NodeStmt *> body;
 };
 
@@ -509,10 +510,12 @@ public:
 // FUNCTION
         else if(peek().has_value() && peek().value().type == TokenType::fun){
             consume();
+            auto stmt_fun = m_allocator.alloc<NodeFun>();
+            stmt_fun->ident = consume();
+
             try_consume(TokenType::open_paren, "Expected '('");
             try_consume(TokenType::close_paren, "Expected ')'");
             try_consume(TokenType::open_curly, "Expected Scope for function");
-            auto stmt_fun = m_allocator.alloc<NodeFun>();
             if (auto scope = parse_scope()) {
                 stmt_fun->body = scope.value()->stmts;
             }
