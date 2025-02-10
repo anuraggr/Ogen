@@ -31,25 +31,27 @@ enum class TokenType {
     less_eq,
     n_eq,
     while_condition,
-    for_loop
+    for_loop,
+    fun
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
 TokenType getStringToTokenType(const std::string& inString){
-        static const std::unordered_map<std::string, TokenType> tokenMap = {
-            {"exit", TokenType::exit},
-            {"let", TokenType::let},
-            {"be", TokenType::eq},
-            {"if", TokenType::if_condition},
-            {"elif", TokenType::elif},
-            {"else", TokenType::else_condition},
-            {"while", TokenType::while_condition},
-            {"for", TokenType::for_loop}
-        };
+    static const std::unordered_map<std::string, TokenType> tokenMap = {
+        {"exit", TokenType::exit},
+        {"let", TokenType::let},
+        {"be", TokenType::eq},
+        {"if", TokenType::if_condition},
+        {"elif", TokenType::elif},
+        {"else", TokenType::else_condition},
+        {"while", TokenType::while_condition},
+        {"for", TokenType::for_loop},
+        {"fun", TokenType::fun}
+    };
 
-        auto it = tokenMap.find(inString);
-        if(it != tokenMap.end()){
-            return it->second;
+    auto it = tokenMap.find(inString);
+    if (it != tokenMap.end()) {
+        return it->second;
         }
         return TokenType::ident;
 }
@@ -97,6 +99,7 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::less_eq: os << "less_eq"; break;
             case TokenType::n_eq: os << "not_eq"; break;
             case TokenType::for_loop: os << "for_loop"; break;
+            case TokenType::fun:os << "function"; break;
          }
          return os;
      }
@@ -173,6 +176,11 @@ class Tokenizer {
                         case TokenType::ident:
                             std::cout << "Buffer is ident" << std::endl; //debug
                             tokens.push_back({ .type = TokenType::ident, .value = buf });
+                            buf.clear();
+                            break;
+                        case TokenType::fun:
+                            std::cout << "Buffer is fun" << std::endl; // debug
+                            tokens.push_back({.type = TokenType::fun});
                             buf.clear();
                             break;
                         default:
