@@ -1,7 +1,7 @@
-let x = 1;
+let var1 = 10;
+let var2 = 20;
 
-while(x<11) {
-    x = x + 1;
+if(var1+var2!=10){
+    exit(99);
 }
-
-exit(x);
+#n
