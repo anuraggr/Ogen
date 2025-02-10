@@ -54,3 +54,13 @@ if(var1+var2==10){
 #Exits with 0 because condition not true.
 #This is for comments.
 ```
+
+## Keywords:
+- **exit**
+- **let**
+- **be**
+- **if**
+- **elif**
+- **else**
+- **while**
+- **for**
