@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
         file << generator.gen_prog();
     }
 
-    #ifdef OS_LINUX                       //Untestd. might not work on windows.
+    #ifdef OS_LINUX                       //Untestd. might not work on windows. actaully def wont work on windows. the syscalls are different
         system("nasm -felf64 out.asm");
         system("ld -o out out.o");
     #else
