@@ -100,9 +100,13 @@ struct NodeStmtFor {
     std::vector<NodeStmt *> body;
 };
 
+struct NodeFun {
+    std::vector<NodeStmt *> body;
+};
+
 struct NodeStmt {
     std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, 
-                NodeStmtWhile *, NodeStmtFor *, NodeStmtAssign *> var;
+                NodeStmtWhile *, NodeStmtFor *, NodeStmtAssign *, NodeFun *> var;
 };
 
 struct NodeProg {
@@ -501,6 +505,23 @@ public:
             stmt->var = stmt_for;
             return stmt;
         }
+
+// FUNCTION
+        else if(peek().has_value() && peek().value().type == TokenType::fun){
+            consume();
+            try_consume(TokenType::open_paren, "Expected '('");
+            try_consume(TokenType::close_paren, "Expected ')'");
+            try_consume(TokenType::open_curly, "Expected Scope for function");
+            auto stmt_fun = m_allocator.alloc<NodeFun>();
+            if (auto scope = parse_scope()) {
+                stmt_fun->body = scope.value()->stmts;
+            }
+            auto stmt = m_allocator.alloc<NodeStmt>();
+            stmt->var = stmt_fun;
+            return stmt;
+        }
+
+
 // SCOPE
 
         else if (auto open_curly = try_consume(TokenType::open_curly)) {
