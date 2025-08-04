@@ -373,6 +373,9 @@ public:
                 gen->pop("rax");
                 gen->m_output << "    mov QWORD [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
             }
+            void operator()(const NodeFun* stmt_fun) const {
+                std::cout << "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+            }
         };
 
         StmtVisitor visitor { .gen = this };
