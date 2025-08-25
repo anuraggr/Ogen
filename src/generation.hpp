@@ -376,6 +376,13 @@ public:
             void operator()(const NodeFun* stmt_fun) const {
                 std::cout << "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
             }
+
+            void operator()(const NodeStmtPrint *stmt_print) const {
+                gen->gen_expr(stmt_print->expr);
+                gen->pop("rax");
+                gen->m_output << "    call _print_int\n";
+                gen->m_output << "    call _print_newline\n";
+            }
         };
 
         StmtVisitor visitor { .gen = this };
@@ -384,7 +391,48 @@ public:
 
     [[nodiscard]] std::string gen_prog()
     {
-        m_output << "global _start\n_start:\n";
+        //im copy pasting this. this converts  number to string on the stack
+        m_output << "section .text\n";
+        m_output << "global _start\n\n";
+
+        m_output << "_print_int:\n";
+        m_output << "    push rbp          ; 1. Save the old base pointer\n";
+        m_output << "    mov rbp, rsp      ; 2. Set our new base pointer (this saves the stack position)\n";
+        m_output << "    mov rbx, 10       ; Divisor\n";
+        m_output << "    cmp rax, 0\n";
+        m_output << "    jge .to_str_loop\n";
+        m_output << "    push '-'          ; Push '-' for negative numbers\n";
+        m_output << "    neg rax           ; Make rax positive\n";
+        m_output << ".to_str_loop:\n";
+        m_output << "    xor rdx, rdx      ; Clear rdx for division\n";
+        m_output << "    div rbx           ; rax = rax / 10, rdx = remainder\n";
+        m_output << "    add rdx, '0'      ; Convert digit to ASCII\n";
+        m_output << "    push rdx          ; Push ASCII digit onto stack\n";
+        m_output << "    test rax, rax     ; Is quotient zero?\n";
+        m_output << "    jnz .to_str_loop  ; If not, loop again\n";
+        m_output << ".print:\n";
+        m_output << "    mov rax, 1        ; sys_write syscall\n";
+        m_output << "    mov rdi, 1        ; stdout file descriptor\n";
+        m_output << "    mov rsi, rsp      ; Address of string to print\n";
+        m_output << "    mov rdx, rbp      ; Calculate length using our saved base pointer\n";
+        m_output << "    sub rdx, rsp\n";
+        m_output << "    syscall           ; This clobbers rcx, but we are using rbp, so it's OK\n";
+        m_output << "    mov rsp, rbp      ; 3. Restore stack pointer from our saved value\n";
+        m_output << "    pop rbp           ; 4. Restore the old base pointer\n";
+        m_output << "    ret\n\n";
+
+        m_output << "_print_newline:\n";
+        m_output << "    mov rax, 1\n";
+        m_output << "    mov rdi, 1\n";
+        m_output << "    mov rsi, 0xA\n"; // ASCII newline
+        m_output << "    push rsi\n";
+        m_output << "    mov rsi, rsp\n";
+        m_output << "    mov rdx, 1\n";
+        m_output << "    syscall\n";
+        m_output << "    pop rsi\n";
+        m_output << "    ret\n\n";
+
+        m_output << "_start:\n";
 
         for (const NodeStmt* stmt : m_prog.stmts) {
             gen_stmt(stmt);

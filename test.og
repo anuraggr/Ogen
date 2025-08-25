@@ -1,7 +1,4 @@
 let var1 = 10;
 let var2 = 20;
-
-if(var1+var2!=10){
-    exit(99);
-}
-#n
+print(var2+var1);
+exit(10);

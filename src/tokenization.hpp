@@ -32,7 +32,8 @@ enum class TokenType {
     n_eq,
     while_condition,
     for_loop,
-    fun
+    fun,
+    print
     };
 
 // Converts a string to its corresponding TokenType for Switch case below.
@@ -46,7 +47,8 @@ TokenType getStringToTokenType(const std::string& inString){
         {"else", TokenType::else_condition},
         {"while", TokenType::while_condition},
         {"for", TokenType::for_loop},
-        {"fun", TokenType::fun}
+        {"fun", TokenType::fun},
+        {"print", TokenType::print}
     };
 
     auto it = tokenMap.find(inString);
@@ -100,6 +102,7 @@ std::optional<int> bin_prec(TokenType type) {
             case TokenType::n_eq: os << "not_eq"; break;
             case TokenType::for_loop: os << "for_loop"; break;
             case TokenType::fun:os << "function"; break;
+            case TokenType::print: os << "print"; break;
          }
          return os;
      }
@@ -181,6 +184,11 @@ class Tokenizer {
                         case TokenType::fun:
                             std::cout << "Buffer is fun" << std::endl; // debug
                             tokens.push_back({.type = TokenType::fun});
+                            buf.clear();
+                            break;
+                        case TokenType::print:
+                            std::cout << "Buffer is print" << std::endl; // debug
+                            tokens.push_back({.type = TokenType::print});
                             buf.clear();
                             break;
                         default:
