@@ -55,6 +55,15 @@ if(var1+var2==10){
 #This is for comments.
 ```
 
+```
+let var1 = 10;
+let var2 = 20;
+
+print(var2+var1); #print stmt
+
+exit(10);
+```
+
 ## Keywords:
 - **exit**
 - **let**
@@ -64,3 +73,4 @@ if(var1+var2==10){
 - **else**
 - **while**
 - **for**
+- **print**
