@@ -64,6 +64,17 @@ print(var2+var1); #print stmt
 exit(10);
 ```
 
+```
+print(var2+var1+1);
+
+fun add(x, y) {
+   return x + y;
+}
+
+print(add(100, add(10,1)));     #prints 111
+exit(69);
+```
+
 
 
 ## Keywords:

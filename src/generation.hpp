@@ -400,13 +400,11 @@ public:
                 gen->gen_expr(stmt_assign->rhs);
                 gen->pop("rax");
                 
-                // Check if this is a function parameter (negative stack_loc indicates parameter)
+                // negative stack_loc indicates parameter
                 if (it->stack_loc < 0) {
-                    // Parameter: positive offset from rbp  
                     int param_index = -it->stack_loc - 1;
                     gen->m_output << "    mov QWORD [rbp + " << (param_index + 2) * 8 << "], rax\n";
                 } else {
-                    // Local variable: negative offset from rbp
                     gen->m_output << "    mov QWORD [rbp - " << (it->stack_loc + 1) * 8 << "], rax\n";
                 }
             }
@@ -419,8 +417,7 @@ public:
 
                 gen->begin_scope();
 
-                // Store parameters with negative stack_loc to indicate they are parameters
-                // Parameters are accessed at [rbp + offset] where offset > 0
+                // params are neg stack_loc
                 for (int i = 0; i < stmt_fun->params.size(); ++i) {
                     gen->m_vars.push_back({.name = stmt_fun->params[i].value.value(),
                                            .stack_loc = -i - 1});
@@ -511,7 +508,7 @@ public:
         m_output << "global _start\n\n";
         m_output << "_start:\n";
         
-        // Set up stack frame for main function
+        // setting up stack frame
         push("rbp");
         m_output << "    mov rbp, rsp\n";
 
@@ -549,7 +546,8 @@ private:
     {
         size_t pop_count = m_vars.size() - m_scopes.back();
         m_output << "    add rsp, " << pop_count * 8 << "\n";
-        // Prevent integer underflow
+
+        //  integer underflow protection
         if (pop_count <= m_stack_size) {
             m_stack_size -= pop_count;
         } else {
@@ -563,7 +561,7 @@ private:
 
     struct Var {
         std::string name;
-        int stack_loc;  // Changed to int to avoid casting issues
+        int stack_loc; 
     };
 
     std::string generate_label(const std::string& base) {
