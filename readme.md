@@ -64,6 +64,8 @@ print(var2+var1); #print stmt
 exit(10);
 ```
 
+
+
 ## Keywords:
 - **exit**
 - **let**
@@ -74,3 +76,4 @@ exit(10);
 - **while**
 - **for**
 - **print**
+- **func**

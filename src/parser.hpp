@@ -8,6 +8,7 @@
 
 struct NodeExpr;
 struct NodeStmt;
+struct NodeStmtScope;
 
 struct NodeTermIntLit {
     Token int_lit;
@@ -21,8 +22,23 @@ struct NodeTermParen {
     NodeExpr *expr;
 };
 
+struct NodeStmtFun {
+    Token ident;
+    std::vector<Token> params;
+    NodeStmtScope *body;
+};
+
+struct NodeTermFunCall {
+    Token ident;
+    std::vector<NodeExpr *> args;
+};
+
+struct NodeStmtReturn {
+    NodeExpr *expr;
+};
+
 struct NodeTerm {
-    std::variant<NodeTermIntLit *, NodeTermIdent *, NodeTermParen *> var;
+    std::variant<NodeTermIntLit *, NodeTermIdent *, NodeTermParen *, NodeTermFunCall *> var;
 };
 
 struct NodeBinExprAdd {
@@ -100,18 +116,15 @@ struct NodeStmtFor {
     std::vector<NodeStmt *> body;
 };
 
-struct NodeFun {
-    Token ident;
-    std::vector<NodeStmt *> body;
-};
 
 struct NodeStmtPrint {
     NodeExpr *expr;
 };
 
 struct NodeStmt {
-    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *, 
-                NodeStmtWhile *, NodeStmtFor *, NodeStmtAssign *, NodeFun *, NodeStmtPrint *> var;
+    std::variant<NodeStmtExit *, NodeStmtLet *, NodeStmtScope *, NodeStmtIf *,
+                 NodeStmtWhile *, NodeStmtFor *, NodeStmtAssign *, NodeStmtFun *,
+                 NodeStmtPrint *, NodeStmtReturn *> var;
 };
 
 struct NodeProg {
@@ -133,6 +146,29 @@ public:
             term->var = term_int_lit;
             return term;
         } else if (auto ident = try_consume(TokenType::ident)) {
+            // Check for a function call
+            if (peek().has_value() && peek().value().type == TokenType::open_paren) {
+                consume();
+                auto fun_call = m_allocator.alloc<NodeTermFunCall>();
+                fun_call->ident = ident.value();
+                while (peek().has_value() && peek().value().type != TokenType::close_paren) {
+                    if (auto arg_expr = parse_expr()) {
+                        fun_call->args.push_back(arg_expr.value());
+                    } else {
+                        std::cerr << "Invalid expression as function argument" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                    if (peek().value().type != TokenType::close_paren) {
+                        try_consume(TokenType::comma, "Expected ',' to separate arguments");
+                    }
+                }
+                try_consume(TokenType::close_paren, "Expected ')' after arguments");
+
+                auto term = m_allocator.alloc<NodeTerm>();
+                term->var = fun_call;
+                return term;
+            }
+            // uf not function call, it's a regular identifier
             auto expr_ident = m_allocator.alloc<NodeTermIdent>();
             expr_ident->ident = ident.value();
             auto term = m_allocator.alloc<NodeTerm>();
@@ -529,18 +565,43 @@ public:
 
         // FUNCTION
         else if (peek().has_value() && peek().value().type == TokenType::fun) {
-            consume();
-            auto stmt_fun = m_allocator.alloc<NodeFun>();
-            stmt_fun->ident = consume();
+            consume(); // consume fun
+            auto stmt_fun = m_allocator.alloc<NodeStmtFun>();
+            stmt_fun->ident = try_consume(TokenType::ident, "Expected function name");
+            try_consume(TokenType::open_paren, "Expected '(' after function name");
 
-            try_consume(TokenType::open_paren, "Expected '('");
-            try_consume(TokenType::close_paren, "Expected ')'");
-            try_consume(TokenType::open_curly, "Expected Scope for function");
+            while (peek().has_value() && peek().value().type != TokenType::close_paren) {
+                stmt_fun->params.push_back(try_consume(TokenType::ident, "Expected parameter name"));
+                if (peek().value().type != TokenType::close_paren) {
+                    try_consume(TokenType::comma, "Expected ',' to separate parameters");
+                }
+            }
+            try_consume(TokenType::close_paren, "Expected ')' after parameters");
+
             if (auto scope = parse_scope()) {
-                stmt_fun->body = scope.value()->stmts;
+                stmt_fun->body = scope.value();
+            } else {
+                std::cerr << "Expected function body with {}" << std::endl;
+                exit(EXIT_FAILURE);
             }
             auto stmt = m_allocator.alloc<NodeStmt>();
             stmt->var = stmt_fun;
+            return stmt;
+        }
+
+        // RETURN STATEMENT
+        else if (peek().has_value() && peek().value().type == TokenType::return_kw) {
+            consume();
+            auto stmt_return = m_allocator.alloc<NodeStmtReturn>();
+            if (auto expr = parse_expr()) {
+                stmt_return->expr = expr.value();
+            } else {
+                std::cerr << "Expected expression after 'return'" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::semi, "Expected ';' after return statement");
+            auto stmt = m_allocator.alloc<NodeStmt>();
+            stmt->var = stmt_return;
             return stmt;
         }
 

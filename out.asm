@@ -1,6 +1,4 @@
 section .text
-global _start
-
 _print_int:
     push rbp          ; 1. Save the old base pointer
     mov rbp, rsp      ; 2. Set our new base pointer (this saves the stack position)
@@ -38,18 +36,58 @@ _print_newline:
     pop rsi
     ret
 
+add:
+    push rbp
+    mov rbp, rsp
+    push QWORD [rbp + 24]
+    push QWORD [rbp + 16]
+    pop rax
+    pop rbx
+    add rax, rbx
+    push rax
+    pop rax
+    mov rsp, rbp
+    pop rbp
+    ret
+    add rsp, 16
+    mov rsp, rbp
+    pop rbp
+    ret
+global _start
+
 _start:
+    push rbp
+    mov rbp, rsp
     mov rax, 10
     push rax
     mov rax, 20
     push rax
-    push QWORD [rsp + 8]
-
-    push QWORD [rsp + 8]
-
+    mov rax, 1
+    push rax
+    push QWORD [rbp - 8]
+    push QWORD [rbp - 16]
     pop rax
     pop rbx
     add rax, rbx
+    push rax
+    pop rax
+    pop rbx
+    add rax, rbx
+    push rax
+    pop rax
+    call _print_int
+    call _print_newline
+    mov rax, 1
+    push rax
+    mov rax, 10
+    push rax
+    call add
+    add rsp, 16
+    push rax
+    mov rax, 100
+    push rax
+    call add
+    add rsp, 16
     push rax
     pop rax
     call _print_int

@@ -33,6 +33,8 @@ enum class TokenType {
     while_condition,
     for_loop,
     fun,
+    comma,
+    return_kw,
     print
     };
 
@@ -48,8 +50,8 @@ TokenType getStringToTokenType(const std::string& inString){
         {"while", TokenType::while_condition},
         {"for", TokenType::for_loop},
         {"fun", TokenType::fun},
-        {"print", TokenType::print}
-    };
+        {"return", TokenType::return_kw},
+        {"print", TokenType::print}};
 
     auto it = tokenMap.find(inString);
     if (it != tokenMap.end()) {
@@ -184,6 +186,10 @@ class Tokenizer {
                         case TokenType::fun:
                             std::cout << "Buffer is fun" << std::endl; // debug
                             tokens.push_back({.type = TokenType::fun});
+                            buf.clear();
+                            break;
+                        case TokenType::return_kw:
+                            tokens.push_back({.type = TokenType::return_kw});
                             buf.clear();
                             break;
                         case TokenType::print:
@@ -322,6 +328,11 @@ class Tokenizer {
                             while(peek().has_value() && peek().value()!='\n'){
                                 consume();
                             }
+                            break;
+                        case ',':
+                            consume();
+                            tokens.push_back({.type = TokenType::comma});
+                            std::cout << "Buffer is ," << std::endl;
                             break;
                         default:
                             std::cerr << "Unknown token: " << currentChar << std::endl;

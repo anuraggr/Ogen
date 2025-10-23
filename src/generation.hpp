@@ -19,21 +19,49 @@ public:
                 gen->m_output << "    mov rax, " << term_int_lit->int_lit.value.value() << "\n";
                 gen->push("rax");
             }
-            void operator()(const NodeTermIdent* term_ident) const {
-                auto it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(), [&](const auto& var) {
-                    return var.name == term_ident->ident.value.value();
+
+            void operator()(const NodeTermIdent *term_ident) const {
+                const auto &ident_name = term_ident->ident.value.value();
+                auto it = std::find_if(gen->m_vars.rbegin(), gen->m_vars.rend(), [&](const auto &var) {
+                    return var.name == ident_name;
                 });
-                if(it == gen->m_vars.end()){
-                    std::cerr << "Identifier not decleared in scope: " << term_ident->ident.value.value() << std::endl;
+
+                if (it == gen->m_vars.rend()) {
+                    std::cerr << "Undeclared identifier: " << ident_name << std::endl;
                     exit(EXIT_FAILURE);
                 }
+
                 std::stringstream offset;
-                offset << "QWORD [rsp + " << (gen->m_stack_size - (*it).stack_loc - 1) * 8 << "]\n";
+                // Check if this is a function parameter (negative stack_loc indicates parameter)
+                if ((*it).stack_loc < 0) {
+                    // Parameter: positive offset from rbp
+                    int param_index = -(*it).stack_loc - 1;
+                    offset << "QWORD [rbp + " << (param_index + 2) * 8 << "]";
+                } else {
+                    // Local variable: negative offset from rbp
+                    offset << "QWORD [rbp - " << ((*it).stack_loc + 1) * 8 << "]";
+                }
                 gen->push(offset.str());
             }
 
             void operator()(const NodeTermParen* term_paren) const {
                 gen->gen_expr(term_paren->expr);
+            }
+
+            void operator()(const NodeTermFunCall *fun_call) const {
+                for (auto it = fun_call->args.rbegin(); it != fun_call->args.rend(); ++it) {
+                    gen->gen_expr(*it);
+                }
+
+                gen->m_output << "    call " << fun_call->ident.value.value() << "\n";
+             
+                if (!fun_call->args.empty()) {
+                    gen->m_output << "    add rsp, " << fun_call->args.size() * 8 << "\n";
+                    gen->m_stack_size -= fun_call->args.size();
+                }
+
+                //return val is in rax. we push it on the stack
+                gen->push("rax");
             }
         };
         TermVisitor visitor({.gen = this});
@@ -183,7 +211,7 @@ public:
                     std::cerr << "Identifier already used: " << stmt_let->ident.value.value() << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                gen->m_vars.push_back({ .name = stmt_let->ident.value.value(), .stack_loc = gen->m_stack_size });
+                gen->m_vars.push_back({ .name = stmt_let->ident.value.value(), .stack_loc = static_cast<int>(gen->m_stack_size) });
                 gen->gen_expr(stmt_let->expr);
             }
             void operator()(const NodeStmtScope* scope) const
@@ -371,10 +399,50 @@ public:
                 }
                 gen->gen_expr(stmt_assign->rhs);
                 gen->pop("rax");
-                gen->m_output << "    mov QWORD [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
+                
+                // Check if this is a function parameter (negative stack_loc indicates parameter)
+                if (it->stack_loc < 0) {
+                    // Parameter: positive offset from rbp  
+                    int param_index = -it->stack_loc - 1;
+                    gen->m_output << "    mov QWORD [rbp + " << (param_index + 2) * 8 << "], rax\n";
+                } else {
+                    // Local variable: negative offset from rbp
+                    gen->m_output << "    mov QWORD [rbp - " << (it->stack_loc + 1) * 8 << "], rax\n";
+                }
             }
-            void operator()(const NodeFun* stmt_fun) const {
-                std::cout << "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+            void operator()(const NodeStmtFun *stmt_fun) const {
+                gen->m_output << stmt_fun->ident.value.value() << ":\n";
+
+                gen->push("rbp");
+                gen->m_output << "    mov rbp, rsp\n";
+
+                gen->begin_scope();
+
+                // Store parameters with negative stack_loc to indicate they are parameters
+                // Parameters are accessed at [rbp + offset] where offset > 0
+                for (int i = 0; i < stmt_fun->params.size(); ++i) {
+                    gen->m_vars.push_back({.name = stmt_fun->params[i].value.value(),
+                                           .stack_loc = -i - 1});
+                }
+
+                for (const NodeStmt *stmt : stmt_fun->body->stmts) {
+                    gen->gen_stmt(stmt);
+                }
+
+                gen->end_scope();
+
+                gen->m_output << "    mov rsp, rbp\n";
+                gen->pop("rbp");
+                gen->m_output << "    ret\n";
+            }
+
+            void operator()(const NodeStmtReturn *stmt_return) const {
+                gen->gen_expr(stmt_return->expr);
+                gen->pop("rax"); 
+                gen->m_output << "    mov rsp, rbp\n";
+                gen->pop("rbp");
+                gen->m_output << "    ret\n";
             }
 
             void operator()(const NodeStmtPrint *stmt_print) const {
@@ -393,7 +461,6 @@ public:
     {
         //im copy pasting this. this converts  number to string on the stack
         m_output << "section .text\n";
-        m_output << "global _start\n\n";
 
         m_output << "_print_int:\n";
         m_output << "    push rbp          ; 1. Save the old base pointer\n";
@@ -432,12 +499,29 @@ public:
         m_output << "    pop rsi\n";
         m_output << "    ret\n\n";
 
-        m_output << "_start:\n";
 
-        for (const NodeStmt* stmt : m_prog.stmts) {
-            gen_stmt(stmt);
+
+        //gen all functions
+        for (const NodeStmt *stmt : m_prog.stmts) {
+            if (std::holds_alternative<NodeStmtFun *>(stmt->var)) {
+                gen_stmt(stmt);
+            }
         }
 
+        m_output << "global _start\n\n";
+        m_output << "_start:\n";
+        
+        // Set up stack frame for main function
+        push("rbp");
+        m_output << "    mov rbp, rsp\n";
+
+        for (const NodeStmt *stmt : m_prog.stmts) {
+            if (!std::holds_alternative<NodeStmtFun *>(stmt->var)) {
+                gen_stmt(stmt);
+            }
+        }
+
+        //in case no exit stmt, exit with code 60.
         m_output << "    mov rax, 60\n";
         m_output << "    mov rdi, 0\n";
         m_output << "    syscall\n";
@@ -465,7 +549,12 @@ private:
     {
         size_t pop_count = m_vars.size() - m_scopes.back();
         m_output << "    add rsp, " << pop_count * 8 << "\n";
-        m_stack_size -= pop_count;
+        // Prevent integer underflow
+        if (pop_count <= m_stack_size) {
+            m_stack_size -= pop_count;
+        } else {
+            m_stack_size = 0;
+        }
         for(int i = 0; i<pop_count; i++){
             m_vars.pop_back();
         }
@@ -474,7 +563,7 @@ private:
 
     struct Var {
         std::string name;
-        size_t stack_loc;
+        int stack_loc;  // Changed to int to avoid casting issues
     };
 
     std::string generate_label(const std::string& base) {
